@@ -505,6 +505,15 @@ contract TestHeap {
         validate(heap);
     }
 
+    function testUpdateSameValue() external {
+        AddressHeap.Heap storage heap = getHeap(true);
+        heap.insert(address(2), 200);
+        heap.insert(address(1), 100);
+        heap.update(address(1), 100);
+        expectTop(heap, address(1), 100);
+        validate(heap);   
+    }
+
     // Externally tested
 
     function externalAlreadyInitialized() external {
