@@ -414,26 +414,32 @@ contract TestHeap {
 
         // Pop elements
         heap.popTop();
+        Assert.isFalse(heap.has(address(3)), "heap should not have address");
         expectTop(heap, address(4), 500);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(4)), "heap should not have address");
         expectTop(heap, address(6), 450);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(6)), "heap should not have address");
         expectTop(heap, address(5), 400);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(5)), "heap should not have address");
         expectTop(heap, address(2), 300);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(2)), "heap should not have address");
         expectTop(heap, address(1), 50);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(1)), "heap should not have address");
         expectTop(heap, address(0), 0);
         validate(heap);
     }
@@ -468,35 +474,49 @@ contract TestHeap {
 
         // Pop elements
         heap.popTop();
+        Assert.isFalse(heap.has(address(4)), "heap should not have address");
         expectTop(heap, address(3), 200);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(3)), "heap should not have address");
         expectTop(heap, address(2), 300);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(2)), "heap should not have address");
         expectTop(heap, address(5), 400);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(5)), "heap should not have address");
         expectTop(heap, address(6), 450);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(6)), "heap should not have address");
         expectTop(heap, address(1), 1000);
         validate(heap);
 
         heap.popTop();
+        Assert.isFalse(heap.has(address(1)), "heap should not have address");
         expectTop(heap, address(0), 0);
         validate(heap);
     }
 
     function validate(AddressHeap.Heap storage _heap) private {
         uint256 length = _heap.entries.length - 1;
+        Assert.equal(length, _heap.size(), "size should equal length - 1");
         bool uneven = false;
         for (uint256 i = 1; i <= length; i++) {
             uint256 val = _heap.entries[i];
+
+            // Test decode and encode
+            (address daddr, uint256 dvalue) = _heap.decode(val);
+            (uint256 eentry) = _heap.encode(daddr, dvalue);
+            Assert.equal(val, eentry, "re-encoded entry should equal original entry");
+            Assert.equal(daddr, AddressHeap.decodeAddress(val, _heap.inverted), "decoded address should equal addr");
+            Assert.isTrue(_heap.has(daddr), "heap should have addr");
 
             if (i != 1) {
                 // has parent
@@ -524,6 +544,8 @@ contract TestHeap {
         (address raddr, uint256 rval) = _heap.top();
         Assert.equal(_val, rval, "top value should be equal");
         Assert.equal(_addr, raddr, "top address should be equal");
+        (, uint256 aval) = _heap.getAddr(_addr);
+        Assert.equal(aval, _val, "getAddr should return val");
     }
 
     function getHeap(bool _inverted) private returns (AddressHeap.Heap storage) {
