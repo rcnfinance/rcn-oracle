@@ -24,6 +24,10 @@ contract OracleFactory is Ownable {
         MultiSourceOracle(_oracle).addSigner(_signer);
     }
 
+    function removeSigner(address _oracle, address _signer) external onlyOwner {
+        MultiSourceOracle(_oracle).removeSigner(_signer);
+    }
+
     function provide(address _oracle, uint256 _rate) external {
         MultiSourceOracle(_oracle).provide(msg.sender, _rate);
     }
