@@ -20,7 +20,7 @@ library AddressHeap {
     function encode(Heap storage _heap, address _addr, uint256 _value) internal view returns (uint256 _entry) {
         /* solium-disable-next-line */
         assembly {
-            _entry := or(_addr, shl(160, _value))
+            _entry := or(and(0xffffffffffffffffffffffffffffffffffffffff, _addr), shl(160, _value))
         }
 
         if (_heap.inverted) {
@@ -169,29 +169,43 @@ library AddressHeap {
         // Bubble down
         ind = _ind;
         bool inverted = _heap.inverted;
-        uint256 target = _heap.entries.length - 1;
-        while (ind * 2 < target) {
+
+        uint256 lenght = _heap.entries.length;
+        uint256 target = lenght - 1;
+
+        while (ind * 2 < lenght) {
             // get the current index of the children
             uint256 j = ind * 2;
 
             // left child value
             uint256 leftChild = _heap.entries[j];
-            // right child value
-            uint256 rightChild = _heap.entries[j + 1];
 
             // Store the value of the child
             uint256 childValue;
 
-            // Compare the left and right child. if the rightChild is greater, then point j to it's index
-            if (leftChild < rightChild) {
-                childValue = rightChild;
-                j = j + 1;
+            if (target > j) {
+                // The parent has two childs 👨‍👧‍👦
+
+                // Load right child value
+                uint256 rightChild = _heap.entries[j + 1];
+
+                // Compare the left and right child.
+                // if the rightChild is greater, then point j to it's index
+                // and save the value
+                if (leftChild < rightChild) {
+                    childValue = rightChild;
+                    j = j + 1;
+                } else {
+                    // The left child is greater
+                    childValue = leftChild;
+                }
             } else {
-                // The left child is greater
+                // The parent has a single child 👨‍👦
                 childValue = leftChild;
             }
 
-            if (_heap.entries[ind] > childValue) {
+            // Check if the child has a lower value
+            if (_val > childValue) {
                 break;
             }
 
