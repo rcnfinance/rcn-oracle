@@ -17,10 +17,9 @@ library AddressHeap {
     }
 
     function initialize(Heap storage _heap, bool _inverted) internal {
-        if (_heap.entries.length == 0) {
-            _heap.entries.push(0);
-            _heap.inverted = _inverted;
-        }
+        require(_heap.entries.length == 0, "already initialized");
+        _heap.entries.push(0);
+        _heap.inverted = _inverted;
     }
 
     function encode(Heap storage _heap, address _addr, uint256 _value) internal view returns (uint256 _entry) {
