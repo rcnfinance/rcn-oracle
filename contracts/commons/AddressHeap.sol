@@ -146,7 +146,7 @@ library AddressHeap {
         bool inverted = _heap.inverted;
         if (ind != 1) {
             uint256 parent = _heap.entries[ind / 2];
-            while(parent < _val) {
+            while (parent < _val) {
                 // If the parent value is lower than our current value, we swap them
                 (_heap.entries[ind / 2], _heap.entries[ind]) = (_val, parent);
 
@@ -170,7 +170,7 @@ library AddressHeap {
         ind = _ind;
         bool inverted = _heap.inverted;
         uint256 target = _heap.entries.length - 1;
-        while(ind * 2 < target) {
+        while (ind * 2 < target) {
             // get the current index of the children
             uint256 j = ind * 2;
 

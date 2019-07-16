@@ -88,6 +88,29 @@ contract MultiSourceOracle is Ownable {
         _equilibrate();
     }
 
+    function readSample(bytes calldata) external view returns (uint256, uint256) {
+        return readSample();
+    }
+
+    function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
+        // Tokens is always base
+        _tokens = BASE;
+
+        uint256 topSize = topProposers.size();
+        uint256 botSize = botProposers.size();
+
+        if (topSize > botSize) {
+            (, _equivalent) = topProposers.top();
+        } else if (botSize > topSize) {
+            (, _equivalent) = botProposers.top();
+        } else {
+            // Calculate equivalent
+            (, uint256 topValue) = topProposers.top();
+            (, uint256 botValue) = botProposers.top();
+            _equivalent = (topValue + botValue) / 2;
+        }
+    }
+
     function _insert(address _signer, uint256 _rate) private {
         uint256 topSize = topProposers.size();
         uint256 botSize = botProposers.size();
@@ -115,28 +138,5 @@ contract MultiSourceOracle is Ownable {
             topProposers.insert(botAddr, botValue);
             botProposers.insert(topAddr, topValue);
         }
-    }
-
-    function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
-        // Tokens is always base
-        _tokens = BASE;
-
-        uint256 topSize = topProposers.size();
-        uint256 botSize = botProposers.size();
-
-        if (topSize > botSize) {
-            (, _equivalent) = topProposers.top();
-        } else if (botSize > topSize) {
-            (, _equivalent) = botProposers.top();
-        } else {
-            // Calculate equivalent
-            (, uint256 topValue) = topProposers.top();
-            (, uint256 botValue) = botProposers.top();
-            _equivalent = (topValue + botValue) / 2;
-        }
-    }
-
-    function readSample(bytes calldata) external view returns (uint256, uint256) {
-        return readSample();
     }
 }

@@ -11,8 +11,6 @@ contract RateOracle {
     uint256 public constant VERSION = 5;
     bytes4 internal constant RATE_ORACLE_INTERFACE = 0xa265d8e0;
 
-    constructor() internal {}
-
     /**
         3 or 4 letters symbol of the currency, Ej: ETH
     */
