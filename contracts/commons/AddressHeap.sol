@@ -1,5 +1,10 @@
 pragma solidity ^0.5.10;
 
+/*
+    Heap configurable for MinHeap and MaxHeap
+
+    @author Agustin Aguilar <agusxrun@gmail.com>
+*/
 
 library AddressHeap {
     using AddressHeap for AddressHeap.Heap;
