@@ -6,11 +6,11 @@ const expect = require('chai')
     .use(require('bn-chai')(BN))
     .expect;
 
-function bn (number) {
+function bn(number) {
     return new BN(number);
 }
 
-function perm (xs) {
+function perm(xs) {
     const ret = [];
 
     for (let i = 0; i < xs.length; i = i + 1) {
@@ -34,7 +34,7 @@ contract('Multi Source Oracle', function (accounts) {
         this.factory = await Factory.new({ from: this.owner });
     });
 
-    async function createOracle (symbol) {
+    async function createOracle(symbol) {
         const event = await this.factory.newOracle(symbol, { from: this.owner });
         return Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
     }
@@ -151,5 +151,115 @@ contract('Multi Source Oracle', function (accounts) {
             const sample = await oracle.readSample();
             expect(sample[1]).to.eq.BN(bn(300000));
         }
+    });
+
+    it('Should return the median rate with a eight providers', async () => {
+        const oracle = await createOracle('TEST-9');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[5], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[6], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[7], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 400000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        await this.factory.provide(oracle.address, 600000, { from: accounts[5] });
+        await this.factory.provide(oracle.address, 700000, { from: accounts[6] });
+        await this.factory.provide(oracle.address, 800000, { from: accounts[7] });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(450000));
+    });
+
+    it('Should remove a signer and update rate, with uneven signers', async () => {
+        const oracle = await createOracle('TEST-10');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 250000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 450000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(350000));
+    });
+
+    it('Should remove a signer and update rate, with even signers', async () => {
+        const oracle = await createOracle('TEST-11');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[5], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 250000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 450000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        await this.factory.provide(oracle.address, 550000, { from: accounts[5] });
+        await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(450000));
+    });
+
+    it('Should remove a signer and update rate, with nine signers', async () => {
+        const oracle = await createOracle('TEST-12');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[5], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[6], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[7], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[8], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 400000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        await this.factory.provide(oracle.address, 600000, { from: accounts[5] });
+        await this.factory.provide(oracle.address, 700000, { from: accounts[6] });
+        await this.factory.provide(oracle.address, 800000, { from: accounts[7] });
+        await this.factory.provide(oracle.address, 900000, { from: accounts[8] });
+        await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(550000));
+    });
+
+    it('Should remove a signer and update rate, with ten signers', async () => {
+        const oracle = await createOracle('TEST-12');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[5], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[6], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[7], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[8], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[9], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 400000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        await this.factory.provide(oracle.address, 600000, { from: accounts[5] });
+        await this.factory.provide(oracle.address, 700000, { from: accounts[6] });
+        await this.factory.provide(oracle.address, 800000, { from: accounts[7] });
+        await this.factory.provide(oracle.address, 900000, { from: accounts[8] });
+        await this.factory.provide(oracle.address, 1000000, { from: accounts[9] });
+        await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(600000));
     });
 });
