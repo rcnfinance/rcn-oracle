@@ -1,3 +1,4 @@
+// solium-disable security/no-low-level-calls
 pragma solidity ^0.5.10;
 
 import "../contracts/commons/AddressHeap.sol";
@@ -502,6 +503,65 @@ contract TestHeap {
         Assert.isFalse(heap.has(address(1)), "heap should not have address");
         expectTop(heap, address(0), 0);
         validate(heap);
+    }
+
+    // Externally tested
+
+    function externalAlreadyInitialized() external {
+        AddressHeap.Heap storage heap = getHeap(true);
+        heap.initialize(false);
+    }
+
+    function testAlreadyInitialized() external {
+        (bool success, ) = address(this).call(abi.encodeWithSelector(
+                this.externalAlreadyInitialized.selector
+            )
+        );
+
+        Assert.isFalse(success, "double initialize should revert");
+    }
+
+    function externalPopEmpty() external {
+        AddressHeap.Heap storage heap = getHeap(true);
+        heap.popTop();
+    }
+
+    function testPopEmpty() external {
+        (bool success, ) = address(this).call(abi.encodeWithSelector(
+                this.externalPopEmpty.selector
+            )
+        );
+
+        Assert.isFalse(success, "pop empty heap should fail");
+    }
+
+    function externalDuplicatedInsert() external {
+        AddressHeap.Heap storage heap = getHeap(true);
+        heap.insert(address(1), 2);
+        heap.insert(address(1), 3);
+    }
+
+    function testDuplicatedInsert() external {
+        (bool success, ) = address(this).call(abi.encodeWithSelector(
+                this.externalDuplicatedInsert.selector
+            )
+        );
+
+        Assert.isFalse(success, "duplicated insert should fail");
+    }
+
+    function externalUpdateNonExistent() external {
+        AddressHeap.Heap storage heap = getHeap(true);
+        heap.update(address(1), 2);
+    }
+
+    function testUpdateNonExistent() external {
+        (bool success, ) = address(this).call(abi.encodeWithSelector(
+                this.externalUpdateNonExistent.selector
+            )
+        );
+
+        Assert.isFalse(success, "update non existent should fail");
     }
 
     function validate(AddressHeap.Heap storage _heap) private {
