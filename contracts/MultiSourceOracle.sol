@@ -117,7 +117,7 @@ contract MultiSourceOracle is Ownable {
         }
     }
 
-    function readSample(bytes calldata) external view returns (uint256 _tokens, uint256 _equivalent) {
+    function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
         // Tokens is always base
         _tokens = BASE;
 
@@ -134,5 +134,9 @@ contract MultiSourceOracle is Ownable {
             (, uint256 botValue) = botProposers.top();
             _equivalent = (topValue + botValue) / 2;
         }
+    }
+
+    function readSample(bytes calldata) external view returns (uint256, uint256) {
+        return readSample();
     }
 }
