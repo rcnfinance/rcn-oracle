@@ -1,0 +1,32 @@
+{
+  "name": "rcn-oracle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ripio/rcn-oracle.git"
+  },
+  "author": "Agustin Aguilar",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ripio/rcn-oracle/issues"
+  },
+  "homepage": "https://github.com/ripio/rcn-oracle#readme",
+  "dependencies": {
+    "bn-chai": "^1.0.1",
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.5",
+    "eslint": "^6.0.1",
+    "macaron-cli": "^6.4.1",
+    "rp-solidity-coverage": "^0.5.13",
+    "solium": "^1.2.4",
+    "truffle": "^5.0.27"
+  }
+}
