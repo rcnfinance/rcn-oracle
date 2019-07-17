@@ -2,10 +2,14 @@ pragma solidity ^0.5.10;
 
 import "./commons/Ownable.sol";
 import "./commons/AddressHeap.sol";
+import "./interfaces/RateOracle.sol";
 
 
-contract MultiSourceOracle is Ownable {
+contract MultiSourceOracle is RateOracle, Ownable {
     using AddressHeap for AddressHeap.Heap;
+
+    event SetName(string _prev, string _new);
+    event SetMaintainer(string _prev, string _new);
 
     uint256 public constant BASE = 10 ** 18;
 
@@ -13,9 +17,67 @@ contract MultiSourceOracle is Ownable {
     AddressHeap.Heap private topProposers;
     AddressHeap.Heap private botProposers;
 
-    constructor() public {
+    string private isymbol;
+    string private iname;
+    uint256 private idecimals;
+    address private itoken;
+    bytes32 private icurrency;
+    string private imaintainer;
+
+    constructor(
+        string memory _symbol,
+        string memory _name,
+        uint256 _decimals,
+        address _token,
+        bytes32 _currency,
+        string memory _maintainer
+    ) public {
+        isymbol = _symbol;
+        iname = _name;
+        idecimals = _decimals;
+        itoken = _token;
+        icurrency = _currency;
+        imaintainer = _maintainer;
+        emit SetName("", _name);
+        emit SetMaintainer("", _maintainer);
         topProposers.initialize(true);
         botProposers.initialize(false);
+    }
+
+    function readSample(bytes calldata) external view returns (uint256, uint256) {
+        return _readSample();
+    }
+
+    function readSample() external view returns (uint256, uint256) {
+        return _readSample();
+    }
+
+    function symbol() external view returns (string memory) {
+        return isymbol;
+    }
+
+    function name() external view returns (string memory) {
+        return iname;
+    }
+
+    function decimals() external view returns (uint256) {
+        return idecimals;
+    }
+
+    function token() external view returns (address) {
+        return itoken;
+    }
+
+    function currency() external view returns (bytes32) {
+        return icurrency;
+    }
+
+    function maintainer() external view returns (string memory) {
+        return imaintainer;
+    }
+
+    function url() external view returns (string memory) {
+        return "";
     }
 
     function getProvided(address _addr) external view returns (
@@ -32,6 +94,16 @@ contract MultiSourceOracle is Ownable {
         } else if (_botHeap) {
             (_indexHeap, _rate) = botProposers.getAddr(_addr);
         }
+    }
+
+    function setName(string calldata _name) external onlyOwner {
+        emit SetName(iname, _name);
+        iname = _name;
+    }
+
+    function setMaintainer(string calldata _maintainer) external onlyOwner {
+        emit SetMaintainer(imaintainer, _maintainer);
+        imaintainer = _maintainer;
     }
 
     function addSigner(address _signer) external onlyOwner {
@@ -88,29 +160,6 @@ contract MultiSourceOracle is Ownable {
         _equilibrate();
     }
 
-    function readSample(bytes calldata) external view returns (uint256, uint256) {
-        return readSample();
-    }
-
-    function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
-        // Tokens is always base
-        _tokens = BASE;
-
-        uint256 topSize = topProposers.size();
-        uint256 botSize = botProposers.size();
-
-        if (topSize > botSize) {
-            (, _equivalent) = topProposers.top();
-        } else if (botSize > topSize) {
-            (, _equivalent) = botProposers.top();
-        } else {
-            // Calculate equivalent
-            (, uint256 topValue) = topProposers.top();
-            (, uint256 botValue) = botProposers.top();
-            _equivalent = (topValue + botValue) / 2;
-        }
-    }
-
     function _insert(address _signer, uint256 _rate) private {
         uint256 topSize = topProposers.size();
         uint256 botSize = botProposers.size();
@@ -137,6 +186,25 @@ contract MultiSourceOracle is Ownable {
             // Insert reverted
             topProposers.insert(botAddr, botValue);
             botProposers.insert(topAddr, topValue);
+        }
+    }
+
+    function _readSample() private view returns (uint256 _tokens, uint256 _equivalent) {
+        // Tokens is always base
+        _tokens = BASE;
+
+        uint256 topSize = topProposers.size();
+        uint256 botSize = botProposers.size();
+
+        if (topSize > botSize) {
+            (, _equivalent) = topProposers.top();
+        } else if (botSize > topSize) {
+            (, _equivalent) = botProposers.top();
+        } else {
+            // Calculate equivalent
+            (, uint256 topValue) = topProposers.top();
+            (, uint256 botValue) = botProposers.top();
+            _equivalent = (topValue + botValue) / 2;
         }
     }
 }

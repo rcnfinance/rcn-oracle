@@ -6,11 +6,11 @@ const expect = require('chai')
     .use(require('bn-chai')(BN))
     .expect;
 
-function bn (number) {
+function bn(number) {
     return new BN(number);
 }
 
-function perm (xs) {
+function perm(xs) {
     const ret = [];
 
     for (let i = 0; i < xs.length; i = i + 1) {
@@ -34,8 +34,16 @@ contract('Multi Source Oracle', function (accounts) {
         this.factory = await Factory.new({ from: this.owner });
     });
 
-    async function createOracle (symbol) {
-        const event = await this.factory.newOracle(symbol, { from: this.owner });
+    async function createOracle(symbol) {
+        const event = await this.factory.newOracle(
+            symbol,
+            symbol,
+            18,
+            accounts[3],
+            "maintainer",
+            { from: this.owner }
+        );
+
         return Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
     }
 

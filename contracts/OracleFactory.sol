@@ -2,17 +2,34 @@ pragma solidity ^0.5.10;
 
 import "./MultiSourceOracle.sol";
 import "./commons/Ownable.sol";
+import "./utils/StringUtils.sol";
 
 
 contract OracleFactory is Ownable {
+    using StringUtils for string;
+
     mapping(string => address) public symbolToOracle;
     mapping(address => string) public oracleToSymbol;
 
     event NewOracle(string _symbol, address _oracle);
 
-    function newOracle(string calldata _symbol) external onlyOwner {
+    function newOracle(
+        string calldata _symbol,
+        string calldata _name,
+        uint256 _decimals,
+        address _token,
+        string calldata _maintainer
+    ) external onlyOwner {
         // Create oracle contract
-        MultiSourceOracle oracle = new MultiSourceOracle();
+        MultiSourceOracle oracle = new MultiSourceOracle(
+            _symbol,
+            _name,
+            _decimals,
+            _token,
+            _symbol.toBytes32(),
+            _maintainer
+        );
+
         // Save Oracle in registry
         symbolToOracle[_symbol] = address(oracle);
         oracleToSymbol[address(oracle)] = _symbol;
