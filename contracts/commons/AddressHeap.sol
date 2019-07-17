@@ -129,23 +129,26 @@ library AddressHeap {
 
         uint256 can = _heap.encode(_addr, _value);
         uint256 val = _heap.entries[ind];
+        uint256 newInd;
 
         if (can < val) {
             // Bubble down
-            ind = _heap.bubbleDown(ind, can);
+            newInd = _heap.bubbleDown(ind, can);
         } else if (can > val) {
             // Bubble up
-            ind = _heap.bubbleUp(ind, can);
+            newInd = _heap.bubbleUp(ind, can);
         } else {
             // no changes needed
             return;
         }
 
         // Update entry
-        _heap.entries[ind] = can;
+        _heap.entries[newInd] = can;
 
         // Update index
-        _heap.index[_addr] = ind;
+        if (newInd != ind) {
+            _heap.index[_addr] = newInd;
+        }
     }
 
     function bubbleUp(Heap storage _heap, uint256 _ind, uint256 _val) internal returns (uint256 ind) {
