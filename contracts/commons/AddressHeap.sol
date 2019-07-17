@@ -136,6 +136,9 @@ library AddressHeap {
         } else if (can > val) {
             // Bubble up
             ind = _heap.bubbleUp(ind, can);
+        } else {
+            // no changes needed
+            return;
         }
 
         // Update entry
