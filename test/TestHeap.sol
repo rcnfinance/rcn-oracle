@@ -511,7 +511,7 @@ contract TestHeap {
         heap.insert(address(1), 100);
         heap.update(address(1), 100);
         expectTop(heap, address(1), 100);
-        validate(heap);   
+        validate(heap);
     }
 
     // Externally tested
