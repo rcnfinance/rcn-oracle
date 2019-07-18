@@ -47,6 +47,28 @@ contract('Multi Source Oracle', function (accounts) {
         return Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
     }
 
+    it('Should set an retrieve metadata', async () => {
+        const event = await this.factory.newOracle(
+            'TEST-META',
+            'Test oracle metadata',
+            18,
+            accounts[5],
+            'Test maintainer field',
+            { from: this.owner }
+        );
+
+        const oracle = await Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
+        expect(await oracle.symbol()).to.be.equal('TEST-META');
+        expect(await oracle.name()).to.be.equal('Test oracle metadata');
+        expect(await oracle.decimals()).to.eq.BN(bn(18));
+        expect(await oracle.token()).to.be.equal(accounts[5]);
+        expect(await oracle.maintainer()).to.equal('Test maintainer field');
+
+        // Change name and maintainer
+        await this.factory.setMaintainer(oracle.address, 'test maintaner updated', { from: this.owner });
+        await this.factory.setName(oracle.address, 'test update name', { from: this.owner });
+    });
+
     it('Should return single rate with a single provider', async () => {
         const oracle = await createOracle('TEST-1');
         await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
