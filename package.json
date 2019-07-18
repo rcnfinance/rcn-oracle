@@ -7,7 +7,14 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test",
+    "lint": "./node_modules/.bin/eslint . && ./node_modules/.bin/solium --dir ."
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint",
+      "pre-push": "npm run test"
+    }
   },
   "repository": {
     "type": "git",
@@ -34,6 +41,7 @@
     "truffle": "^5.0.27"
   },
   "devDependencies": {
-    "eslint-plugin-import": "^2.18.0"
+    "eslint-plugin-import": "^2.18.0",
+    "husky": "^3.0.0"
   }
 }
