@@ -10,6 +10,11 @@ contract OracleFactory is Ownable {
 
     event NewOracle(string _symbol, address _oracle);
 
+    event AddSigner(address _oracle, address _signer);
+    event RemoveSigner(address _oracle, address _signer);
+
+    event Provide(address _oracle, address _signer, uint256 _rate);
+
     function newOracle(string calldata _symbol) external onlyOwner {
         // Create oracle contract
         MultiSourceOracle oracle = new MultiSourceOracle();
@@ -22,14 +27,17 @@ contract OracleFactory is Ownable {
 
     function addSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).addSigner(_signer);
+        emit RemoveSigner(_oracle, _signer);
     }
 
     function removeSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).removeSigner(_signer);
+        emit AddSigner(_oracle, _signer);
     }
 
     function provide(address _oracle, uint256 _rate) external {
         MultiSourceOracle(_oracle).provide(msg.sender, _rate);
+        emit Provide(_oracle, msg.sender, _rate);
     }
 
     function provideMultiple(bytes32[] calldata _data) external {
