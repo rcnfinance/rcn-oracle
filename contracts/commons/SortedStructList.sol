@@ -3,6 +3,7 @@ pragma solidity 0.5.10;
 import "./SortedList.sol";
 import "./SortedListDelegate.sol";
 
+
 contract SortedStructList is SortedListDelegate {
     using SortedList for SortedList.List;
 

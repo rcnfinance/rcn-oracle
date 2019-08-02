@@ -21,7 +21,6 @@ contract('SortedStructList', function (accounts) {
     });
 
     context('when list is empty', function () {
-
         describe('sizeOf', function () {
             it('should be zero', async function () {
                 expect(await this.list.sizeOf()).to.be.bignumber.equal(new BN(0));
@@ -36,7 +35,6 @@ contract('SortedStructList', function (accounts) {
                 expect(node[2]).to.be.bignumber.equal(HEAD);
             });
         });
-
     });
 
     context('when list is not empty (1 node)', function () {
@@ -99,7 +97,6 @@ contract('SortedStructList', function (accounts) {
             let charlyId;
 
             beforeEach(async function () {
-
                 await this.list.newNode(alice, new BN(1));
                 aliceId = await this.list.id();
                 await this.list.insert(aliceId);
@@ -109,7 +106,6 @@ contract('SortedStructList', function (accounts) {
 
                 await this.list.newNode(charly, new BN(2));
                 charlyId = await this.list.id();
-
             });
 
             describe('adding nodes (3 times)', function () {
@@ -124,7 +120,6 @@ contract('SortedStructList', function (accounts) {
                     aliceNode = await this.list.getNode(aliceId);
                     bobNode = await this.list.getNode(bobId);
                     charlyNode = await this.list.getNode(charlyId);
-
                 });
 
                 it('aliceNode LEFT should be init', async function () {

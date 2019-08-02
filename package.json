@@ -20,7 +20,7 @@
     "url": "git+https://github.com/ripio/rcn-oracle.git"
   },
   "author": "Agustin Aguilar",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/ripio/rcn-oracle/issues"
   },

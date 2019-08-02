@@ -3,7 +3,7 @@ const Factory = artifacts.require('./OracleFactory.sol');
 const { BN } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 
-function perm(xs) {
+function perm (xs) {
     const ret = [];
 
     for (let i = 0; i < xs.length; i = i + 1) {
@@ -20,10 +20,8 @@ function perm(xs) {
 
     return ret;
 }
-/* eslint guard-for-in: */
-// TODO: make refactor
-contract('Multi Source Oracle', function (accounts) {
 
+contract('Multi Source Oracle', function (accounts) {
     async function createOracle (symbol) {
         const event = await this.factory.newOracle(
             symbol,
@@ -127,7 +125,6 @@ contract('Multi Source Oracle', function (accounts) {
     });
 
     it('Should return the average of the two median rate with a four providers, regardless the order', async () => {
-            
         const provided = perm([200000, 100000, 300000, 400000]);
         for (const i in provided) {
             const provide = provided[i];
