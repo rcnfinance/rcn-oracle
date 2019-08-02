@@ -40,18 +40,6 @@ contract('Multi Source Oracle', function (accounts) {
         this.factory = await Factory.new({ from: this.owner });
     });
 
-    it('Should return the median rate with a three providers', async () => {
-        const oracle = await createOracle('TEST-3');
-        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
-        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
-        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
-        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
-        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
-        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
-        const sample = await oracle.readSample();
-        expect(sample[1]).to.be.bignumber.equal(new BN(200000));
-    });
-
     it('Should set an retrieve metadata', async () => {
         const event = await this.factory.newOracle(
             'TEST-META',
@@ -76,11 +64,10 @@ contract('Multi Source Oracle', function (accounts) {
 
     it('Should return single rate with a single provider', async () => {
         const oracle = await createOracle('TEST-1');
-        const amount = new BN(100000);
         await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
-        await this.factory.provide(oracle.address, amount);
+        await this.factory.provide(oracle.address, new BN(100000));
         const sample = await oracle.readSample();
-        expect(sample[1]).to.be.bignumber.equal(amount);
+        expect(sample[1]).to.be.bignumber.equal(new BN(100000));
     });
 
     it('Should return average rate with a two providers', async () => {
@@ -91,6 +78,18 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
         const sample = await oracle.readSample();
         expect(sample[1]).to.be.bignumber.equal(new BN(150000));
+    });
+
+    it('Should return the median rate with a three providers', async () => {
+        const oracle = await createOracle('TEST-3');
+        await this.factory.addSigner(oracle.address, accounts[0], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.be.bignumber.equal(new BN(200000));
     });
 
     it('Should return the median rate with a three providers, regardless the order', async () => {
