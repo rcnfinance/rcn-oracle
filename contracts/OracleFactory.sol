@@ -12,6 +12,9 @@ contract OracleFactory is Ownable {
     mapping(address => string) public oracleToSymbol;
 
     event NewOracle(string _symbol, address _oracle);
+    event AddSigner(address _oracle, address _signer);
+    event RemoveSigner(address _oracle, address _signer);
+    event Provide(address _oracle, address _signer, uint256 _rate);
 
     function newOracle(
         string calldata _symbol,
@@ -39,10 +42,12 @@ contract OracleFactory is Ownable {
 
     function addSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).addSigner(_signer);
+        emit AddSigner(_oracle, _signer);
     }
 
     function removeSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).removeSigner(_signer);
+        emit RemoveSigner(_oracle, _signer);
     }
 
     function setName(address _oracle, string calldata _name) external onlyOwner {
@@ -55,6 +60,7 @@ contract OracleFactory is Ownable {
 
     function provide(address _oracle, uint256 _rate) external {
         MultiSourceOracle(_oracle).provide(msg.sender, _rate);
+        emit Provide(_oracle, msg.sender, _rate);
     }
 
 }
