@@ -57,18 +57,4 @@ contract OracleFactory is Ownable {
         MultiSourceOracle(_oracle).provide(msg.sender, _rate);
     }
 
-    function provideMultiple(bytes32[] calldata _data) external {
-        for (uint256 i = 0; i < _data.length; i++) {
-            (address oracle, uint256 rate) = _decode(_data[i]);
-            MultiSourceOracle(oracle).provide(msg.sender, rate);
-        }
-    }
-
-    function _decode(bytes32 _entry) private pure returns (address _addr, uint256 _value) {
-        /* solium-disable-next-line */
-        assembly {
-            _addr := and(_entry, 0xffffffffffffffffffffffffffffffffffffffff)
-            _value := shr(160, _entry)
-        }
-    }
 }
