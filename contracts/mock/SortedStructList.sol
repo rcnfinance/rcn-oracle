@@ -1,17 +1,17 @@
 pragma solidity 0.5.10;
 
-import "./SortedList.sol";
-import "./SortedListDelegate.sol";
+import "./../commons/SortedList.sol";
+import "./../commons/SortedListDelegate.sol";
 
 
-contract SortedStructList is SortedListDelegate {
+contract SortedStructListMock is SortedListDelegate {
     using SortedList for SortedList.List;
-
+    // mapping of id => value
     mapping(uint256 => uint256) internal nodes;
     SortedList.List private list;
     uint256 public id = 0;
 
-    function newNode(address _addr, uint256 _value) external returns (uint256) {
+    function newNode(uint256 _value) external returns (uint256) {
         id = id + 1;
         nodes[id] = _value;
         return id;
@@ -41,7 +41,7 @@ contract SortedStructList is SortedListDelegate {
         return list.getNextNode(_id);
     }
 
-    function remove(uint256 _id) public returns (uint256) {
+    function remove(uint256 _id) external returns (uint256) {
         return list.remove(_id);
     }
 

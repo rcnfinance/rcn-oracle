@@ -1,21 +1,26 @@
 pragma solidity ^0.5.10;
 
 import "./commons/Ownable.sol";
-import "./commons/SortedStructList.sol";
+import "./commons/SortedList.sol";
+import "./commons/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
 
 
-contract MultiSourceOracle is SortedStructList, RateOracle, Ownable {
+contract MultiSourceOracle is SortedListDelegate, RateOracle, Ownable {
+
+    using SortedList for SortedList.List;
+    uint256 public constant BASE = 10 ** 18;
 
     event SetName(string _prev, string _new);
     event SetMaintainer(string _prev, string _new);
 
-    uint256 public constant BASE = 10 ** 18;
+    SortedList.List private list;
 
-
+    mapping(uint256 => uint256) internal nodes;
     mapping(address => uint256) private signers;
-
     mapping(address => bool) public isSigner;
+
+    uint256 public internalId = 0;
 
     string private isymbol;
     string private iname;
@@ -78,11 +83,9 @@ contract MultiSourceOracle is SortedStructList, RateOracle, Ownable {
         return "";
     }
 
-    function getProvided(address _addr) external view returns (
-        uint256 _rate,
-        uint256 _index
-    ) {
-        return (nodes[id], id);
+    function getProvided(address _signer) external view returns (uint256 _rate, uint256 _index) {
+        uint256 id = signers[_signer];
+        return (this.getValue(id), id);
     }
 
     function setName(string calldata _name) external onlyOwner {
@@ -101,28 +104,36 @@ contract MultiSourceOracle is SortedStructList, RateOracle, Ownable {
     }
 
     function removeSigner(address _signer) external onlyOwner {
-
-        isSigner[_signer] = false;
-        this.remove(signers[_signer]);
-        signers[_signer] = 0;
-
+        uint256 id = signers[_signer];
+        if (list.remove(id) > 0) {
+            isSigner[_signer] = false;
+            signers[_signer] = 0;
+        }
     }
 
     function provide(address _signer, uint256 _rate) external onlyOwner {
-
         require(isSigner[_signer], "signer not valid");
         require(_rate > 0, "rate can't be zero");
         require(_rate < uint96(uint256(-1)), "rate too high");
         
-        uint256 id = this.newNode(_signer, _rate);
+        uint256 id = newNode(_rate);
         signers[_signer] = id;
-        this.insert(id);
+        list.insert(id, address(this));
+    }
 
+    function getValue(uint256 id) external view returns (uint256) {
+        return nodes[id];
     }
 
     function _readSample() private view returns (uint256 _tokens, uint256 _equivalent) {
         // Tokens is always base
         _tokens = BASE;
-        _equivalent = this.median();
+        _equivalent = list.median(address(this));
+    }
+
+    function newNode(uint256 _value) private returns (uint256) {
+        internalId = internalId + 1;
+        nodes[internalId] = _value;
+        return internalId;
     }
 }

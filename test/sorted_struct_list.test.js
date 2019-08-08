@@ -1,23 +1,18 @@
 
-const { BN, expectEvent } = require('openzeppelin-test-helpers');
+const { BN } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 
 const HEAD = new BN(0);
 const INVALID_TOKEN_ID = new BN(9999);
 
-const SortedStructList = artifacts.require('SortedStructList.sol');
+const SortedStructListMock = artifacts.require('SortedStructListMock.sol');
 
-contract('SortedStructList', function (accounts) {
+contract('SortedStructListMock', function (accounts) {
     const owner = accounts[0];
-    const alice = accounts[1];
-    const bob = accounts[2];
-    const charly = accounts[3];
-    const dean = accounts[4];
-
     const value = new BN(1);
 
     beforeEach(async function () {
-        this.list = await SortedStructList.new({ from: owner });
+        this.list = await SortedStructListMock.new({ from: owner });
     });
 
     context('when list is empty', function () {
@@ -42,7 +37,7 @@ contract('SortedStructList', function (accounts) {
 
         context('adding a node', function () {
             beforeEach(async function () {
-                await this.list.newNode(alice, value);
+                await this.list.newNode(value);
                 aliceId = await this.list.id();
                 await this.list.insert(aliceId);
             });
@@ -97,14 +92,14 @@ contract('SortedStructList', function (accounts) {
             let charlyId;
 
             beforeEach(async function () {
-                await this.list.newNode(alice, new BN(1));
+                await this.list.newNode(new BN(1));
                 aliceId = await this.list.id();
                 await this.list.insert(aliceId);
 
-                await this.list.newNode(bob, new BN(4));
+                await this.list.newNode(new BN(4));
                 bobId = await this.list.id();
 
-                await this.list.newNode(charly, new BN(2));
+                await this.list.newNode(new BN(2));
                 charlyId = await this.list.id();
             });
 
@@ -148,7 +143,7 @@ contract('SortedStructList', function (accounts) {
                 });
 
                 it('should insert in the beginning', async function () {
-                    await this.list.newNode(dean, new BN(0));
+                    await this.list.newNode(new BN(0));
                     const deanId = await this.list.id();
                     await this.list.insert(deanId);
                     const deanNode = await this.list.getNode(deanId);
@@ -157,7 +152,7 @@ contract('SortedStructList', function (accounts) {
                 });
 
                 it('should insert on the middle', async function () {
-                    await this.list.newNode(dean, new BN(3));
+                    await this.list.newNode(new BN(3));
                     const deanId = await this.list.id();
                     await this.list.insert(deanId);
                     const deanNode = await this.list.getNode(deanId);
@@ -166,7 +161,7 @@ contract('SortedStructList', function (accounts) {
                 });
 
                 it('should insert in the end', async function () {
-                    await this.list.newNode(dean, new BN(10));
+                    await this.list.newNode(new BN(10));
                     const deanId = await this.list.id();
                     await this.list.insert(deanId);
                     const deanNode = await this.list.getNode(deanId);
