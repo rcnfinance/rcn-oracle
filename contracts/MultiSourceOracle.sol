@@ -82,10 +82,7 @@ contract MultiSourceOracle is SortedStructList, RateOracle, Ownable {
         uint256 _rate,
         uint256 _index
     ) {
-
-        uint256 id = signers[_addr];
-        Node memory node = nodes[id];
-        return (node.value, id);
+        return (nodes[id], id);
     }
 
     function setName(string calldata _name) external onlyOwner {

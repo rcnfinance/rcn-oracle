@@ -176,12 +176,7 @@ contract('SortedStructList', function (accounts) {
                 context('testing remove', function () {
                     describe('remove aliceNode', function () {
                         beforeEach(async function () {
-                            const { logs } = await this.list.remove(aliceId);
-
-                            expectEvent.inLogs(logs, 'RemoveNode', {
-                                _id: aliceId,
-                            });
-
+                            await this.list.remove(aliceId);
                             bobNode = await this.list.getNode(bobId);
                             charlyNode = await this.list.getNode(charlyId);
                         });
@@ -212,12 +207,7 @@ contract('SortedStructList', function (accounts) {
 
                     describe('remove bobNode', function () {
                         beforeEach(async function () {
-                            const { logs } = await this.list.remove(bobId);
-
-                            expectEvent.inLogs(logs, 'RemoveNode', {
-                                _id: bobId,
-                            });
-
+                            await this.list.remove(bobId);
                             aliceNode = await this.list.getNode(aliceId);
                             charlyNode = await this.list.getNode(charlyId);
                         });
@@ -249,12 +239,7 @@ contract('SortedStructList', function (accounts) {
 
                     describe('remove charlyNode', function () {
                         beforeEach(async function () {
-                            const { logs } = await this.list.remove(charlyId);
-
-                            expectEvent.inLogs(logs, 'RemoveNode', {
-                                _id: charlyId,
-                            });
-
+                            await this.list.remove(charlyId);
                             aliceNode = await this.list.getNode(aliceId);
                             bobNode = await this.list.getNode(bobId);
                         });

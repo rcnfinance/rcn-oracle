@@ -7,25 +7,18 @@ import "./SortedListDelegate.sol";
 contract SortedStructList is SortedListDelegate {
     using SortedList for SortedList.List;
 
-    struct Node {
-        uint256 value;
-    }
-
-    mapping(uint256 => Node) internal nodes;
+    mapping(uint256 => uint256) internal nodes;
     SortedList.List private list;
     uint256 public id = 0;
 
-    event AddNode(uint256 _id);
-    event RemoveNode(uint256 _id);
-
     function newNode(address _addr, uint256 _value) external returns (uint256) {
         id = id + 1;
-        nodes[id] = Node(_value);
+        nodes[id] = _value;
         return id;
     }
     
     function getValue(uint256 _id) external view returns (uint256) {
-        return nodes[_id].value;
+        return nodes[_id];
     }
 
     function exists(uint256 _id) external view returns (bool) {
@@ -37,9 +30,7 @@ contract SortedStructList is SortedListDelegate {
     }
 
     function insert(uint256 _id) external {
-        if (list.insert(_id, address(this))) {
-            emit AddNode(_id);
-        }
+        list.insert(_id, address(this));
     }
 
     function getNode(uint256 _id) external view returns (bool, uint256, uint256) {
@@ -51,11 +42,7 @@ contract SortedStructList is SortedListDelegate {
     }
 
     function remove(uint256 _id) public returns (uint256) {
-        uint256 result = list.remove(_id);
-        if (result > 0) {
-            emit RemoveNode(_id);
-        }
-        return result;
+        return list.remove(_id);
     }
 
     function median() external view returns (uint256) {
