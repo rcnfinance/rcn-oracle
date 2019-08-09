@@ -1,5 +1,10 @@
 module.exports = {
     networks: {
+        development: {
+            host: 'localhost',
+            network_id: '*', // eslint-disable-line camelcase
+            port: 8545,
+        },
         coverage: {
             host: 'localhost',
             network_id: '*', // eslint-disable-line camelcase
@@ -11,7 +16,7 @@ module.exports = {
 
     // Set default mocha options here, use special reporters etc.
     mocha: {
-    // timeout: 100000
+        reporter: 'eth-gas-reporter',
     },
 
     // Configure your compilers
