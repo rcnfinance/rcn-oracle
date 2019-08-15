@@ -9,7 +9,12 @@ contract MultiSourceOracle is Ownable {
 
     uint256 public constant BASE = 10 ** 18;
 
+    event AddSigner(address _signer, string _name);
+    event RemoveSigner(address _signer, string _name);
+
     mapping(address => bool) public isSigner;
+    mapping(address => string) public nameOfSigner;
+    mapping(string => address) public signerWithName;
     AddressHeap.Heap private topProposers;
     AddressHeap.Heap private botProposers;
 
@@ -34,12 +39,20 @@ contract MultiSourceOracle is Ownable {
         }
     }
 
-    function addSigner(address _signer) external onlyOwner {
+    function addSigner(address _signer, string calldata _name) external onlyOwner {
         require(!isSigner[_signer], "signer already defined");
+        require(signerWithName[_name] == address(0), "name already in use");
         isSigner[_signer] = true;
+        signerWithName[_name] = _signer;
+        nameOfSigner[_signer] = _name;
+        emit AddSigner(_signer, _name);
     }
 
     function removeSigner(address _signer) external onlyOwner {
+        string memory name = nameOfSigner[_signer];
+        emit RemoveSigner(_signer, name);
+        signerWithName[name] = address(0);
+
         if (isSigner[_signer]) {
             isSigner[_signer] = false;
         }
