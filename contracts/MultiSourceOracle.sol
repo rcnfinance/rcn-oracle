@@ -2,6 +2,8 @@ pragma solidity ^0.5.10;
 
 import "./commons/Ownable.sol";
 import "./commons/AddressHeap.sol";
+import "./interfaces/RateOracle.sol";
+import "./interfaces/UpgradeProvider.sol";
 
 
 contract MultiSourceOracle is Ownable {
@@ -9,6 +11,7 @@ contract MultiSourceOracle is Ownable {
 
     uint256 public constant BASE = 10 ** 18;
 
+    event Upgraded(address _prev, address _new);
     event AddSigner(address _signer, string _name);
     event UpdateName(address _signer, string _oldName, string _newName);
     event RemoveSigner(address _signer, string _name);
@@ -18,6 +21,8 @@ contract MultiSourceOracle is Ownable {
     mapping(string => address) public signerWithName;
     AddressHeap.Heap private topProposers;
     AddressHeap.Heap private botProposers;
+
+    RateOracle public upgrade;
 
     constructor() public {
         topProposers.initialize(true);
@@ -38,6 +43,11 @@ contract MultiSourceOracle is Ownable {
         } else if (_botHeap) {
             (_indexHeap, _rate) = botProposers.getAddr(_addr);
         }
+    }
+
+    function setUpgrade(RateOracle _upgrade) external onlyOwner {
+        emit Upgraded(address(upgrade), address(_upgrade));
+        upgrade = _upgrade;
     }
 
     function addSigner(address _signer, string calldata _name) external onlyOwner {
@@ -119,6 +129,12 @@ contract MultiSourceOracle is Ownable {
     }
 
     function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
+        // Check if Oracle contract has been upgraded
+        RateOracle _upgrade = upgrade;
+        if (address(_upgrade) != address(0)) {
+            return _upgrade.readSample(new bytes(0));
+        }
+
         // Tokens is always base
         _tokens = BASE;
 

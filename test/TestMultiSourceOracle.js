@@ -263,6 +263,37 @@ contract('Multi Source Oracle', function (accounts) {
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(600000));
     });
+    describe('Upgrade oracle', async () => {
+        it('It should upgrade an Oracle', async () => {
+            const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
+            const newOracle = await createOracle('TEST-UPGRADE-1-NEW');
+
+            await this.factory.setUpgrade(oldOracle.address, newOracle.address, { from: this.owner });
+
+            await this.factory.addSigner(newOracle.address, accounts[0], 'signer 0', { from: this.owner });
+            await this.factory.provide(newOracle.address, 100000, { from: accounts[0] });
+
+            expect(await oldOracle.upgrade()).to.be.equal(newOracle.address);
+
+            const sample1 = await newOracle.readSample();
+            expect(sample1[1]).to.eq.BN(bn(100000));
+
+            const sample2 = await oldOracle.readSample();
+            expect(sample2[1]).to.eq.BN(bn(100000));
+        });
+        it('It should fail to upgrade using factory if not the owner', async () => {
+            const oldOracle = await createOracle('TEST-UPGRADE-2-OLD');
+            const newOracle = await createOracle('TEST-UPGRADE-2-NEW');
+
+            await Helper.tryCatchRevert(this.factory.setUpgrade(oldOracle.address, newOracle.address), 'The owner should be the sender');
+        });
+        it('It should fail to upgrade if not the owner', async () => {
+            const oldOracle = await createOracle('TEST-UPGRADE-3-OLD');
+            const newOracle = await createOracle('TEST-UPGRADE-3-NEW');
+
+            await Helper.tryCatchRevert(oldOracle.setUpgrade(newOracle.address), 'The owner should be the sender');
+        });
+    });
     describe('Handle usernames', async () => {
         it('Should set the name of a signer', async () => {
             const oracle = await createOracle('TEST-NAME-1');
