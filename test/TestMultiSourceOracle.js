@@ -328,4 +328,65 @@ contract('Multi Source Oracle', function (accounts) {
             await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'name can\'t be empty');
         });
     });
+    describe('Pausable oracle', async () => {
+        it('It start unpaused', async () => {
+            expect(await this.factory.paused()).to.be.equal(false);
+        });
+        it('It should be pausable by Owner', async () => {
+            await this.factory.pause({ from: this.owner });
+            expect(await this.factory.paused()).to.be.equal(true);
+
+            // restart
+            await this.factory.start({ from: this.owner });
+        });
+        it('It should be pausable by Pauser', async () => {
+            await this.factory.setPauser(accounts[0], true, { from: this.owner });
+            await this.factory.pause({ from: accounts[0] });
+
+            expect(await this.factory.paused()).to.be.equal(true);
+
+            // restart
+            await this.factory.start({ from: this.owner });
+        });
+        it('Should fail to get sample if paused', async () => {
+            const oracle = await createOracle('TEST-PAUSABLE-3');
+
+            await this.factory.pause({ from: this.owner });
+
+            await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+            await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+
+            await Helper.tryCatchRevert(oracle.readSample(), 'contract paused');
+
+            // restart
+            await this.factory.start({ from: this.owner });
+        });
+        it('Owner should be able to start contract', async () => {
+            await this.factory.pause({ from: this.owner });
+
+            expect(await this.factory.paused()).to.be.equal(true);
+
+            await this.factory.start({ from: this.owner });
+
+            expect(await this.factory.paused()).to.be.equal(false);
+        });
+        it('Pauser should fail to start contract', async () => {
+            await this.factory.setPauser(accounts[0], true, { from: this.owner });
+            await this.factory.pause({ from: accounts[0] });
+
+            expect(await this.factory.paused()).to.be.equal(true);
+
+            await Helper.tryCatchRevert(this.factory.start({ from: accounts[0] }), 'The owner should be the sender');
+
+            expect(await this.factory.paused()).to.be.equal(true);
+
+            // restart
+            await this.factory.start({ from: this.owner });
+        });
+        it('It should remove pauser', async () => {
+            await this.factory.setPauser(accounts[0], false, { from: this.owner });
+            await Helper.tryCatchRevert(this.factory.pause({ from: accounts[0] }), 'not authorized to pause');
+            expect(await this.factory.paused()).to.be.equal(false);
+        });
+    });
 });
