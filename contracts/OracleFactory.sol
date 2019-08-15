@@ -1,6 +1,7 @@
 pragma solidity ^0.5.10;
 
 import "./MultiSourceOracle.sol";
+import "./interfaces/RateOracle.sol";
 import "./commons/Ownable.sol";
 
 
@@ -37,6 +38,10 @@ contract OracleFactory is Ownable {
             (address oracle, uint256 rate) = _decode(_data[i]);
             MultiSourceOracle(oracle).provide(msg.sender, rate);
         }
+    }
+
+    function setUpgrade(address _oracle, address _upgrade) external onlyOwner {
+        MultiSourceOracle(_oracle).setUpgrade(RateOracle(_upgrade));
     }
 
     function _decode(bytes32 _entry) private pure returns (address _addr, uint256 _value) {
