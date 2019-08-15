@@ -20,8 +20,12 @@ contract OracleFactory is Ownable {
         emit NewOracle(_symbol, address(oracle));
     }
 
-    function addSigner(address _oracle, address _signer) external onlyOwner {
-        MultiSourceOracle(_oracle).addSigner(_signer);
+    function addSigner(address _oracle, address _signer, string calldata _name) external onlyOwner {
+        MultiSourceOracle(_oracle).addSigner(_signer, _name);
+    }
+
+    function setName(address _oracle, address _signer, string calldata _name) external onlyOwner {
+        MultiSourceOracle(_oracle).setName(_signer, _name);
     }
 
     function removeSigner(address _oracle, address _signer) external onlyOwner {

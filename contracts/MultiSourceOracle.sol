@@ -9,7 +9,13 @@ contract MultiSourceOracle is Ownable {
 
     uint256 public constant BASE = 10 ** 18;
 
+    event AddSigner(address _signer, string _name);
+    event UpdateName(address _signer, string _oldName, string _newName);
+    event RemoveSigner(address _signer, string _name);
+
     mapping(address => bool) public isSigner;
+    mapping(address => string) public nameOfSigner;
+    mapping(string => address) public signerWithName;
     AddressHeap.Heap private topProposers;
     AddressHeap.Heap private botProposers;
 
@@ -34,12 +40,32 @@ contract MultiSourceOracle is Ownable {
         }
     }
 
-    function addSigner(address _signer) external onlyOwner {
+    function addSigner(address _signer, string calldata _name) external onlyOwner {
         require(!isSigner[_signer], "signer already defined");
+        require(signerWithName[_name] == address(0), "name already in use");
+        require(bytes(_name).length > 0, "name can't be empty");
         isSigner[_signer] = true;
+        signerWithName[_name] = _signer;
+        nameOfSigner[_signer] = _name;
+        emit AddSigner(_signer, _name);
+    }
+
+    function setName(address _signer, string calldata _name) external onlyOwner {
+        require(isSigner[_signer], "signer not defined");
+        require(signerWithName[_name] == address(0), "name already in use");
+        require(bytes(_name).length > 0, "name can't be empty");
+        string memory oldName = nameOfSigner[_signer];
+        emit UpdateName(_signer, oldName, _name);
+        signerWithName[oldName] = address(0);
+        signerWithName[_name] = _signer;
+        nameOfSigner[_signer] = _name;
     }
 
     function removeSigner(address _signer) external onlyOwner {
+        string memory name = nameOfSigner[_signer];
+        emit RemoveSigner(_signer, name);
+        signerWithName[name] = address(0);
+
         if (isSigner[_signer]) {
             isSigner[_signer] = false;
         }
