@@ -3,7 +3,7 @@ pragma solidity ^0.5.10;
 import "./commons/Ownable.sol";
 import "./commons/AddressHeap.sol";
 import "./interfaces/RateOracle.sol";
-import "./interfaces/UpgradeProvider.sol";
+import "./interfaces/PausedProvider.sol";
 
 
 contract MultiSourceOracle is Ownable {
@@ -23,10 +23,12 @@ contract MultiSourceOracle is Ownable {
     AddressHeap.Heap private botProposers;
 
     RateOracle public upgrade;
+    PausedProvider public pausedProvider;
 
     constructor() public {
         topProposers.initialize(true);
         botProposers.initialize(false);
+        pausedProvider = PausedProvider(msg.sender);
     }
 
     function getProvided(address _addr) external view returns (
@@ -129,6 +131,9 @@ contract MultiSourceOracle is Ownable {
     }
 
     function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
+        // Check if paused
+        require(!pausedProvider.isPaused(), "contract paused");
+
         // Check if Oracle contract has been upgraded
         RateOracle _upgrade = upgrade;
         if (address(_upgrade) != address(0)) {

@@ -2,10 +2,12 @@ pragma solidity ^0.5.10;
 
 import "./MultiSourceOracle.sol";
 import "./interfaces/RateOracle.sol";
+import "./interfaces/PausedProvider.sol";
 import "./commons/Ownable.sol";
+import "./commons/Pausable.sol";
 
 
-contract OracleFactory is Ownable {
+contract OracleFactory is Ownable, Pausable, PausedProvider {
     mapping(string => address) public symbolToOracle;
     mapping(address => string) public oracleToSymbol;
 
@@ -19,6 +21,10 @@ contract OracleFactory is Ownable {
         oracleToSymbol[address(oracle)] = _symbol;
         // Emit events
         emit NewOracle(_symbol, address(oracle));
+    }
+
+    function isPaused() external view returns (bool) {
+        return paused;
     }
 
     function addSigner(address _oracle, address _signer, string calldata _name) external onlyOwner {
