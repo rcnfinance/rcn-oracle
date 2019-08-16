@@ -29,7 +29,7 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
     RateOracle public upgrade;
     PausedProvider public pausedProvider;
 
-    constructor() public {}
+    constructor() public {
         pausedProvider = PausedProvider(msg.sender);
     }
 
