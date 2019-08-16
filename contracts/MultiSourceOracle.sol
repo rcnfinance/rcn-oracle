@@ -4,7 +4,7 @@ import "./commons/Ownable.sol";
 import "sorted-collection/SortedList.sol";
 import "sorted-collection/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
-import "./interfaces/UpgradeProvider.sol";
+import "./interfaces/PausedProvider.sol";
 
 
 contract MultiSourceOracle is Ownable, SortedListDelegate {
@@ -27,8 +27,11 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
     
     SortedList.List private list;
     RateOracle public upgrade;
+    PausedProvider public pausedProvider;
 
     constructor() public {}
+        pausedProvider = PausedProvider(msg.sender);
+    }
 
     function getProvided(address _addr) external view returns (uint256 _rate, uint256 _index) {
         uint256 id = signerWithNode[_addr];
@@ -91,6 +94,9 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
     }
 
     function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
+        // Check if paused
+        require(!pausedProvider.isPaused(), "contract paused");
+
         // Check if Oracle contract has been upgraded
         RateOracle _upgrade = upgrade;
         if (address(_upgrade) != address(0)) {
