@@ -84,9 +84,14 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
         require(_rate != 0, "rate can't be zero");
         require(_rate < uint96(uint256(-1)), "rate too high");
 
-        uint256 id = newNode(_rate);
-        signerWithNode[_signer] = id;
-        list.insert(id, address(this));
+        if (signerWithNode[_signer] > 0) {
+            signerWithNode[_signer] = _rate;
+        } else {
+            uint256 id = newNode(_rate);
+            signerWithNode[_signer] = id;
+            list.insert(id, address(this));
+        }
+        
     }
 
     function readSample(bytes calldata) external view returns (uint256, uint256) {
