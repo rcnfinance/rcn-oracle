@@ -4,10 +4,12 @@ import "./commons/Ownable.sol";
 import "./commons/AddressHeap.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
+import "./utils/StringUtils.sol";
 
 
-contract MultiSourceOracle is Ownable {
+contract MultiSourceOracle is RateOracle, Ownable {
     using AddressHeap for AddressHeap.Heap;
+    using StringUtils for string;
 
     uint256 public constant BASE = 10 ** 18;
 
@@ -15,6 +17,7 @@ contract MultiSourceOracle is Ownable {
     event AddSigner(address _signer, string _name);
     event UpdateName(address _signer, string _oldName, string _newName);
     event RemoveSigner(address _signer, string _name);
+    event UpdatedMetadata(string _name, uint256 _decimals, string _maintainer);
 
     mapping(address => bool) public isSigner;
     mapping(address => string) public nameOfSigner;
@@ -25,10 +28,77 @@ contract MultiSourceOracle is Ownable {
     RateOracle public upgrade;
     PausedProvider public pausedProvider;
 
-    constructor() public {
+    string private isymbol;
+    string private iname;
+    uint256 private idecimals;
+    address private itoken;
+    bytes32 private icurrency;
+    string private imaintainer;
+
+    constructor(
+        string memory _symbol,
+        string memory _name,
+        uint256 _decimals,
+        address _token,
+        string memory _maintainer
+    ) public {
+        // Create legacy bytes32 currency
+        bytes32 currency = _symbol.toBytes32();
+        // Save Oracle metadata
+        isymbol = _symbol;
+        iname = _name;
+        idecimals = _decimals;
+        itoken = _token;
+        icurrency = currency;
+        imaintainer = _maintainer;
+        // Initialize structure
         topProposers.initialize(true);
         botProposers.initialize(false);
         pausedProvider = PausedProvider(msg.sender);
+    }
+
+    // Oracle metadata interface
+    function symbol() external view returns (string memory) {
+        return isymbol;
+    }
+
+    function name() external view returns (string memory) {
+        return iname;
+    }
+
+    function decimals() external view returns (uint256) {
+        return idecimals;
+    }
+
+    function token() external view returns (address) {
+        return itoken;
+    }
+
+    function currency() external view returns (bytes32) {
+        return icurrency;
+    }
+
+    function maintainer() external view returns (string memory) {
+        return imaintainer;
+    }
+
+    function url() external view returns (string memory) {
+        return "";
+    }
+
+    function setMetadata(
+        string calldata _name,
+        uint256 _decimals,
+        string calldata _maintainer
+    ) external onlyOwner {
+        iname = _name;
+        idecimals = _decimals;
+        imaintainer = _maintainer;
+        emit UpdatedMetadata(
+            _name,
+            _decimals,
+            _maintainer
+        );
     }
 
     function getProvided(address _addr) external view returns (
@@ -74,9 +144,9 @@ contract MultiSourceOracle is Ownable {
     }
 
     function removeSigner(address _signer) external onlyOwner {
-        string memory name = nameOfSigner[_signer];
-        emit RemoveSigner(_signer, name);
-        signerWithName[name] = address(0);
+        string memory signerName = nameOfSigner[_signer];
+        emit RemoveSigner(_signer, signerName);
+        signerWithName[signerName] = address(0);
 
         if (isSigner[_signer]) {
             isSigner[_signer] = false;

@@ -36,7 +36,15 @@ contract('Multi Source Oracle', function (accounts) {
     });
 
     async function createOracle (symbol) {
-        const event = await this.factory.newOracle(symbol, { from: this.owner });
+        const event = await this.factory.newOracle(
+            symbol,
+            `name - ${symbol}`,
+            2,
+            '0x6164e51D5469ce0225c0054EcF6fD98dB1E8EcDd',
+            'Maintainer metadata',
+            { from: this.owner }
+        );
+
         return Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
     }
 
