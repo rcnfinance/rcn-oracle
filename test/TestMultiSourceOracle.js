@@ -263,6 +263,18 @@ contract('Multi Source Oracle', function (accounts) {
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(600000));
     });
+    it('Should update the value of the signer, with the same value', async () => {
+        const oracle = await createOracle('TEST-13');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(150000));
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
