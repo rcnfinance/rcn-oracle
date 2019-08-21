@@ -7,11 +7,11 @@ const expect = require('chai')
     .use(require('bn-chai')(BN))
     .expect;
 
-function bn(number) {
+function bn (number) {
     return new BN(number);
 }
 
-function perm(xs) {
+function perm (xs) {
     const ret = [];
 
     for (let i = 0; i < xs.length; i = i + 1) {
@@ -35,7 +35,7 @@ contract('Multi Source Oracle', function (accounts) {
         this.factory = await Factory.new({ from: this.owner });
     });
 
-    async function createOracle(symbol) {
+    async function createOracle (symbol) {
         const event = await this.factory.newOracle(
             symbol,
             `name - ${symbol}`,
@@ -433,11 +433,11 @@ contract('Multi Source Oracle', function (accounts) {
 
             await this.factory.setMetadata(
                 oracle.address,
-                "This is the new currency name",
+                'This is the new currency name',
                 22,
-                "This is the new maintainer metadata",
+                'This is the new maintainer metadata',
                 {
-                    from: this.owner
+                    from: this.owner,
                 }
             );
 
@@ -447,6 +447,35 @@ contract('Multi Source Oracle', function (accounts) {
             expect(await oracle.token()).to.be.equal('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6');
             expect(await oracle.currency()).to.be.equal('0x544553542d4d455441444154412d320000000000000000000000000000000000');
             expect(await oracle.maintainer()).to.be.equal('This is the new maintainer metadata');
+        });
+        it('Only owner should be able to update metadata', async () => {
+            const oracle = await createOracle('TEST-METADATA-3');
+            await Helper.tryCatchRevert(
+                this.factory.setMetadata(
+                    oracle.address,
+                    'This is the new currency name',
+                    22,
+                    'This is the new maintainer metadata',
+                    {
+                        from: accounts[0],
+                    }
+                ),
+                'The owner should be the sender'
+            );
+        });
+        it('Only factory should be able to update metadata on oracle', async () => {
+            const oracle = await createOracle('TEST-METADATA-3');
+            await Helper.tryCatchRevert(
+                oracle.setMetadata(
+                    'This is the new currency name',
+                    22,
+                    'This is the new maintainer metadata',
+                    {
+                        from: this.owner,
+                    }
+                ),
+                'The owner should be the sender'
+            );
         });
     });
     describe('Pausable oracle', async () => {
