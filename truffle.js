@@ -1,10 +1,5 @@
 module.exports = {
     networks: {
-        development: {
-            host: 'localhost',
-            network_id: '*', // eslint-disable-line camelcase
-            port: 8545,
-        },
         coverage: {
             host: 'localhost',
             network_id: '*', // eslint-disable-line camelcase
