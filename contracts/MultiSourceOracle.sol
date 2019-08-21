@@ -1,8 +1,8 @@
 pragma solidity ^0.5.10;
 
 import "./commons/Ownable.sol";
-import "sorted-collection/SortedList.sol";
-import "sorted-collection/SortedListDelegate.sol";
+import "../installed_contracts/sorted-collection/contracts/SortedList.sol";
+import "../installed_contracts/sorted-collection/contracts/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
 import "./utils/StringUtils.sol";
@@ -15,7 +15,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
     using StringUtils for string;
 
     uint256 public constant BASE = 10 ** 18;
-    uint256 public internalId = 0;
 
     event Upgraded(address _prev, address _new);
     event AddSigner(address _signer, string _name);
@@ -23,13 +22,11 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
     event RemoveSigner(address _signer, string _name);
     event UpdatedMetadata(string _name, uint256 _decimals, string _maintainer);
 
-    mapping(uint256 => uint256) internal nodes;
     mapping(address => bool) public isSigner;
+    mapping(address => uint256) internal providedBy;
     mapping(address => string) public nameOfSigner;
     mapping(string => address) public signerWithName;
-    mapping(address => uint256) private signerWithNode;
 
-    
     SortedList.List private list;
     RateOracle public upgrade;
     PausedProvider public pausedProvider;
@@ -58,6 +55,11 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         icurrency = currency;
         imaintainer = _maintainer;
         pausedProvider = PausedProvider(msg.sender);
+    }
+
+    // Implemented for SortedListDelegate
+    function getValue(uint256 _id) external view returns (uint256) {
+        return providedBy[address(_id)];
     }
 
     // Oracle metadata interface
@@ -104,11 +106,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         );
     }
 
-    function getProvided(address _addr) external view returns (uint256 _rate, uint256 _index) {
-        uint256 id = signerWithNode[_addr];
-        return (this.getValue(id), id);
-    }
-
     function setUpgrade(RateOracle _upgrade) external onlyOwner {
         emit Upgraded(address(upgrade), address(_upgrade));
         upgrade = _upgrade;
@@ -136,18 +133,15 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
     }
 
     function removeSigner(address _signer) external onlyOwner {
-        
         string memory name = nameOfSigner[_signer];
         if (!isSigner[_signer]) {
             return;
         }
-        
+
         isSigner[_signer] = false;
         signerWithName[name] = address(0);
-        uint256 id = signerWithNode[_signer];
-        list.remove(id);
+        list.remove(uint256(_signer));
         emit RemoveSigner(_signer, name);
-
     }
 
     function provide(address _signer, uint256 _rate) external onlyOwner {
@@ -155,13 +149,13 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         require(_rate != 0, "rate can't be zero");
         require(_rate < uint96(uint256(-1)), "rate too high");
 
-        uint256 node = signerWithNode[_signer];
+        uint256 node = uint256(_signer);
         if (list.exists(node)) {
             list.remove(node);
         }
-        uint256 id = newNode(_rate);
-        signerWithNode[_signer] = id;
-        list.insert(id, address(this));
+
+        providedBy[_signer] = _rate;
+        list.insert(node, address(this));
     }
 
     function readSample(bytes calldata) external view returns (uint256, uint256) {
@@ -182,15 +176,4 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         _tokens = BASE;
         _equivalent = list.median(address(this));
     }
-
-    function getValue(uint256 id) external view returns (uint256) {
-        return nodes[id];
-    }
-
-    function newNode(uint256 _value) private returns (uint256) {
-        internalId = internalId + 1;
-        nodes[internalId] = _value;
-        return internalId;
-    }
-
 }
