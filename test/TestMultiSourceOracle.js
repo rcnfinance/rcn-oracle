@@ -246,7 +246,7 @@ contract('Multi Source Oracle', function (accounts) {
     });
 
     it('Should remove a signer and update rate, with ten signers', async () => {
-        const oracle = await createOracle('TEST-12');
+        const oracle = await createOracle('TEST-12-B');
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await this.factory.addSigner(oracle.address, accounts[1], 'account[1] signer', { from: this.owner });
         await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
@@ -333,6 +333,10 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 5000000, { from: accounts[4] });
         const sample3 = await oracle.readSample();
         expect(sample3[1]).to.eq.BN(bn(300100));
+    });
+    it('Should revert on duplicated oracle', async () => {
+        await createOracle('TEST-DUPLICATED');
+        await Helper.tryCatchRevert(createOracle('TEST-DUPLICATED'), 'Oracle already exists');
     });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
@@ -464,7 +468,7 @@ contract('Multi Source Oracle', function (accounts) {
             );
         });
         it('Only factory should be able to update metadata on oracle', async () => {
-            const oracle = await createOracle('TEST-METADATA-3');
+            const oracle = await createOracle('TEST-METADATA-4');
             await Helper.tryCatchRevert(
                 oracle.setMetadata(
                     'This is the new currency name',
