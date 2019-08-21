@@ -5,11 +5,15 @@ import "sorted-collection/SortedList.sol";
 import "sorted-collection/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
+import "./utils/StringUtils.sol";
+import "./utils/StringUtils.sol";
 
 
-contract MultiSourceOracle is Ownable, SortedListDelegate {
+contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
 
     using SortedList for SortedList.List;
+    using StringUtils for string;
+
     uint256 public constant BASE = 10 ** 18;
     uint256 public internalId = 0;
 
@@ -17,6 +21,7 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
     event AddSigner(address _signer, string _name);
     event UpdateName(address _signer, string _oldName, string _newName);
     event RemoveSigner(address _signer, string _name);
+    event UpdatedMetadata(string _name, uint256 _decimals, string _maintainer);
 
     mapping(uint256 => uint256) internal nodes;
     mapping(address => bool) public isSigner;
@@ -29,8 +34,74 @@ contract MultiSourceOracle is Ownable, SortedListDelegate {
     RateOracle public upgrade;
     PausedProvider public pausedProvider;
 
-    constructor() public {
+    string private isymbol;
+    string private iname;
+    uint256 private idecimals;
+    address private itoken;
+    bytes32 private icurrency;
+    string private imaintainer;
+
+    constructor(
+        string memory _symbol,
+        string memory _name,
+        uint256 _decimals,
+        address _token,
+        string memory _maintainer
+    ) public {
+        // Create legacy bytes32 currency
+        bytes32 currency = _symbol.toBytes32();
+        // Save Oracle metadata
+        isymbol = _symbol;
+        iname = _name;
+        idecimals = _decimals;
+        itoken = _token;
+        icurrency = currency;
+        imaintainer = _maintainer;
         pausedProvider = PausedProvider(msg.sender);
+    }
+
+    // Oracle metadata interface
+    function symbol() external view returns (string memory) {
+        return isymbol;
+    }
+
+    function name() external view returns (string memory) {
+        return iname;
+    }
+
+    function decimals() external view returns (uint256) {
+        return idecimals;
+    }
+
+    function token() external view returns (address) {
+        return itoken;
+    }
+
+    function currency() external view returns (bytes32) {
+        return icurrency;
+    }
+
+    function maintainer() external view returns (string memory) {
+        return imaintainer;
+    }
+
+    function url() external view returns (string memory) {
+        return "";
+    }
+
+    function setMetadata(
+        string calldata _name,
+        uint256 _decimals,
+        string calldata _maintainer
+    ) external onlyOwner {
+        iname = _name;
+        idecimals = _decimals;
+        imaintainer = _maintainer;
+        emit UpdatedMetadata(
+            _name,
+            _decimals,
+            _maintainer
+        );
     }
 
     function getProvided(address _addr) external view returns (uint256 _rate, uint256 _index) {

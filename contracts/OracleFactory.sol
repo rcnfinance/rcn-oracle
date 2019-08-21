@@ -11,16 +11,42 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     mapping(string => address) public symbolToOracle;
     mapping(address => string) public oracleToSymbol;
 
-    event NewOracle(string _symbol, address _oracle);
+    event NewOracle(
+        string _symbol,
+        address _oracle,
+        string _name,
+        uint256 _decimals,
+        address _token,
+        string _maintainer
+    );
 
-    function newOracle(string calldata _symbol) external onlyOwner {
+    function newOracle(
+        string calldata _symbol,
+        string calldata _name,
+        uint256 _decimals,
+        address _token,
+        string calldata _maintainer
+    ) external onlyOwner {
         // Create oracle contract
-        MultiSourceOracle oracle = new MultiSourceOracle();
+        MultiSourceOracle oracle = new MultiSourceOracle(
+            _symbol,
+            _name,
+            _decimals,
+            _token,
+            _maintainer
+        );
         // Save Oracle in registry
         symbolToOracle[_symbol] = address(oracle);
         oracleToSymbol[address(oracle)] = _symbol;
         // Emit events
-        emit NewOracle(_symbol, address(oracle));
+        emit NewOracle(
+            _symbol,
+            address(oracle),
+            _name,
+            _decimals,
+            _token,
+            _maintainer
+        );
     }
 
     function isPaused() external view returns (bool) {
@@ -52,6 +78,19 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
 
     function setUpgrade(address _oracle, address _upgrade) external onlyOwner {
         MultiSourceOracle(_oracle).setUpgrade(RateOracle(_upgrade));
+    }
+
+    function setMetadata(
+        address _oracle,
+        string calldata _name,
+        uint256 _decimals,
+        string calldata _maintainer
+    ) external onlyOwner {
+        MultiSourceOracle(_oracle).setMetadata(
+            _name,
+            _decimals,
+            _maintainer
+        );
     }
 
     function _decode(bytes32 _entry) private pure returns (address _addr, uint256 _value) {

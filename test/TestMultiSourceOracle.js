@@ -36,7 +36,15 @@ contract('Multi Source Oracle', function (accounts) {
     });
 
     async function createOracle (symbol) {
-        const event = await this.factory.newOracle(symbol, { from: this.owner });
+        const event = await this.factory.newOracle(
+            symbol,
+            `name - ${symbol}`,
+            2,
+            '0x6164e51D5469ce0225c0054EcF6fD98dB1E8EcDd',
+            'Maintainer metadata',
+            { from: this.owner }
+        );
+
         return Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
     }
 
@@ -389,6 +397,27 @@ contract('Multi Source Oracle', function (accounts) {
 
             await this.factory.addSigner(oracle.address, accounts[1], 'name 2', { from: this.owner });
             await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'name can\'t be empty');
+        });
+    });
+    describe('Read and set metadta', async () => {
+        it('It should create an Oracle with metadata', async () => {
+            const event = await this.factory.newOracle(
+                'SYMBOL',
+                'This is the Currency name',
+                32,
+                '0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6',
+                'This is the maintainer metadata',
+                { from: this.owner }
+            );
+
+            const oracle = await Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
+
+            expect(await oracle.symbol()).to.be.equal('SYMBOL');
+            expect(await oracle.name()).to.be.equal('This is the Currency name');
+            expect(await oracle.decimals()).to.eq.BN(bn(32));
+            expect(await oracle.token()).to.be.equal('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6');
+            expect(await oracle.currency()).to.be.equal('0x53594d424f4c0000000000000000000000000000000000000000000000000000');
+            expect(await oracle.maintainer()).to.be.equal('This is the maintainer metadata');
         });
     });
     describe('Pausable oracle', async () => {
