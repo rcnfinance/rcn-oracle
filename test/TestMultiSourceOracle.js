@@ -297,6 +297,35 @@ contract('Multi Source Oracle', function (accounts) {
         const sample2 = await oracle.readSample();
         expect(sample2[1]).to.eq.BN(bn(3100000));
     });
+    it('Should update the value of the signer, with the same value, multiple times', async () => {
+        const oracle = await createOracle('TEST-15');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[3], 'account[3] signer', { from: this.owner });
+        await this.factory.addSigner(oracle.address, accounts[4], 'account[4] signer', { from: this.owner });
+        await this.factory.provide(oracle.address, 100000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 250000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 300000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 450000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 500000, { from: accounts[4] });
+        const sample = await oracle.readSample();
+        expect(sample[1]).to.eq.BN(bn(300000));
+        await this.factory.provide(oracle.address, 2000000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 5000000, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 1000000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 4000000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 3100000, { from: accounts[4] });
+        const sample2 = await oracle.readSample();
+        expect(sample2[1]).to.eq.BN(bn(3100000));
+        await this.factory.provide(oracle.address, 10000, { from: accounts[0] });
+        await this.factory.provide(oracle.address, 300100, { from: accounts[1] });
+        await this.factory.provide(oracle.address, 200000, { from: accounts[2] });
+        await this.factory.provide(oracle.address, 400000, { from: accounts[3] });
+        await this.factory.provide(oracle.address, 5000000, { from: accounts[4] });
+        const sample3 = await oracle.readSample();
+        expect(sample3[1]).to.eq.BN(bn(300100));
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
