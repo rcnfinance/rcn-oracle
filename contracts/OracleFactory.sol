@@ -27,6 +27,8 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         address _token,
         string calldata _maintainer
     ) external onlyOwner {
+        // Check for duplicated oracles
+        require(symbolToOracle[_symbol] == address(0), "Oracle already exists");
         // Create oracle contract
         MultiSourceOracle oracle = new MultiSourceOracle(
             _symbol,
@@ -35,6 +37,8 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
             _token,
             _maintainer
         );
+        // Sanity check new oracle
+        assert(bytes(oracleToSymbol[address(oracle)]).length == 0);
         // Save Oracle in registry
         symbolToOracle[_symbol] = address(oracle);
         oracleToSymbol[address(oracle)] = _symbol;

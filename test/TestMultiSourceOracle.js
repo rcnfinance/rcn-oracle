@@ -246,7 +246,7 @@ contract('Multi Source Oracle', function (accounts) {
     });
 
     it('Should remove a signer and update rate, with ten signers', async () => {
-        const oracle = await createOracle('TEST-12');
+        const oracle = await createOracle('TEST-12-B');
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await this.factory.addSigner(oracle.address, accounts[1], 'account[1] signer', { from: this.owner });
         await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
@@ -334,6 +334,10 @@ contract('Multi Source Oracle', function (accounts) {
         const sample3 = await oracle.readSample();
         expect(sample3[1]).to.eq.BN(bn(300100));
     });
+    it('Should revert on duplicated oracle', async () => {
+        await createOracle('TEST-DUPLICATED');
+        await Helper.tryCatchRevert(createOracle('TEST-DUPLICATED'), 'Oracle already exists');
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
@@ -418,6 +422,64 @@ contract('Multi Source Oracle', function (accounts) {
             expect(await oracle.token()).to.be.equal('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6');
             expect(await oracle.currency()).to.be.equal('0x53594d424f4c0000000000000000000000000000000000000000000000000000');
             expect(await oracle.maintainer()).to.be.equal('This is the maintainer metadata');
+        });
+        it('It should update the oracle metadata', async () => {
+            const event = await this.factory.newOracle(
+                'TEST-METADATA-2',
+                'This is the Currency name',
+                32,
+                '0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6',
+                'This is the maintainer metadata',
+                { from: this.owner }
+            );
+
+            const oracle = await Oracle.at(event.logs.find(l => l.event === 'NewOracle').args._oracle);
+
+            await this.factory.setMetadata(
+                oracle.address,
+                'This is the new currency name',
+                22,
+                'This is the new maintainer metadata',
+                {
+                    from: this.owner,
+                }
+            );
+
+            expect(await oracle.symbol()).to.be.equal('TEST-METADATA-2');
+            expect(await oracle.name()).to.be.equal('This is the new currency name');
+            expect(await oracle.decimals()).to.eq.BN(bn(22));
+            expect(await oracle.token()).to.be.equal('0xF970b8E36e23F7fC3FD752EeA86f8Be8D83375A6');
+            expect(await oracle.currency()).to.be.equal('0x544553542d4d455441444154412d320000000000000000000000000000000000');
+            expect(await oracle.maintainer()).to.be.equal('This is the new maintainer metadata');
+        });
+        it('Only owner should be able to update metadata', async () => {
+            const oracle = await createOracle('TEST-METADATA-3');
+            await Helper.tryCatchRevert(
+                this.factory.setMetadata(
+                    oracle.address,
+                    'This is the new currency name',
+                    22,
+                    'This is the new maintainer metadata',
+                    {
+                        from: accounts[0],
+                    }
+                ),
+                'The owner should be the sender'
+            );
+        });
+        it('Only factory should be able to update metadata on oracle', async () => {
+            const oracle = await createOracle('TEST-METADATA-4');
+            await Helper.tryCatchRevert(
+                oracle.setMetadata(
+                    'This is the new currency name',
+                    22,
+                    'This is the new maintainer metadata',
+                    {
+                        from: this.owner,
+                    }
+                ),
+                'The owner should be the sender'
+            );
         });
     });
     describe('Pausable oracle', async () => {
