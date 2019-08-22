@@ -15,12 +15,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
 
     uint256 public constant BASE = 10 ** 18;
 
-    event Upgraded(address _prev, address _new);
-    event AddSigner(address _signer, string _name);
-    event UpdateName(address _signer, string _oldName, string _newName);
-    event RemoveSigner(address _signer, string _name);
-    event UpdatedMetadata(string _name, uint256 _decimals, string _maintainer);
-
     mapping(address => bool) public isSigner;
     mapping(address => uint256) internal providedBy;
     mapping(address => string) public nameOfSigner;
@@ -98,15 +92,9 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         iname = _name;
         idecimals = _decimals;
         imaintainer = _maintainer;
-        emit UpdatedMetadata(
-            _name,
-            _decimals,
-            _maintainer
-        );
     }
 
     function setUpgrade(RateOracle _upgrade) external onlyOwner {
-        emit Upgraded(address(upgrade), address(_upgrade));
         upgrade = _upgrade;
     }
 
@@ -117,7 +105,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         isSigner[_signer] = true;
         signerWithName[_name] = _signer;
         nameOfSigner[_signer] = _name;
-        emit AddSigner(_signer, _name);
     }
 
     function setName(address _signer, string calldata _name) external onlyOwner {
@@ -125,7 +112,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         require(signerWithName[_name] == address(0), "name already in use");
         require(bytes(_name).length > 0, "name can't be empty");
         string memory oldName = nameOfSigner[_signer];
-        emit UpdateName(_signer, oldName, _name);
         signerWithName[oldName] = address(0);
         signerWithName[_name] = _signer;
         nameOfSigner[_signer] = _name;
@@ -140,7 +126,6 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
         isSigner[_signer] = false;
         signerWithName[signerName] = address(0);
         list.remove(uint256(_signer));
-        emit RemoveSigner(_signer, signerName);
     }
 
     function provide(address _signer, uint256 _rate) external onlyOwner {
