@@ -10,7 +10,6 @@ import "./utils/StringUtils.sol";
 
 
 contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
-
     using SortedList for SortedList.List;
     using StringUtils for string;
 
@@ -133,15 +132,15 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
     }
 
     function removeSigner(address _signer) external onlyOwner {
-        string memory name = nameOfSigner[_signer];
+        string memory signerName = nameOfSigner[_signer];
         if (!isSigner[_signer]) {
             return;
         }
 
         isSigner[_signer] = false;
-        signerWithName[name] = address(0);
+        signerWithName[signerName] = address(0);
         list.remove(uint256(_signer));
-        emit RemoveSigner(_signer, name);
+        emit RemoveSigner(_signer, signerName);
     }
 
     function provide(address _signer, uint256 _rate) external onlyOwner {
