@@ -20,6 +20,41 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         string _maintainer
     );
 
+    event Upgraded(
+        address _oracle,
+        address _new
+    );
+
+    event AddSigner(
+        address _oracle,
+        address _signer,
+        string _name
+    );
+
+    event RemoveSigner(
+        address _oracle,
+        address _signer
+    );
+
+    event UpdateSignerName(
+        address _oracle,
+        address _signer,
+        string _newName
+    );
+
+    event UpdatedMetadata(
+        address _oracle,
+        string _name,
+        uint256 _decimals,
+        string _maintainer
+    );
+
+    event Provide(
+        address _oracle,
+        address _signer,
+        uint256 _rate
+    );
+
     function newOracle(
         string calldata _symbol,
         string calldata _name,
@@ -59,29 +94,39 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
 
     function addSigner(address _oracle, address _signer, string calldata _name) external onlyOwner {
         MultiSourceOracle(_oracle).addSigner(_signer, _name);
+        emit AddSigner(_oracle, _signer, _name);
     }
 
     function setName(address _oracle, address _signer, string calldata _name) external onlyOwner {
         MultiSourceOracle(_oracle).setName(_signer, _name);
+        emit UpdateSignerName(
+            _oracle,
+            _signer,
+            _name
+        );
     }
 
     function removeSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).removeSigner(_signer);
+        emit RemoveSigner(_oracle, _signer);
     }
 
     function provide(address _oracle, uint256 _rate) external {
         MultiSourceOracle(_oracle).provide(msg.sender, _rate);
+        emit Provide(_oracle, msg.sender, _rate);
     }
 
     function provideMultiple(bytes32[] calldata _data) external {
         for (uint256 i = 0; i < _data.length; i++) {
             (address oracle, uint256 rate) = _decode(_data[i]);
             MultiSourceOracle(oracle).provide(msg.sender, rate);
+            emit Provide(oracle, msg.sender, rate);
         }
     }
 
     function setUpgrade(address _oracle, address _upgrade) external onlyOwner {
         MultiSourceOracle(_oracle).setUpgrade(RateOracle(_upgrade));
+        emit Upgraded(_oracle, _upgrade);
     }
 
     function setMetadata(
@@ -91,6 +136,13 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         string calldata _maintainer
     ) external onlyOwner {
         MultiSourceOracle(_oracle).setMetadata(
+            _name,
+            _decimals,
+            _maintainer
+        );
+
+        emit UpdatedMetadata(
+            _oracle,
             _name,
             _decimals,
             _maintainer
