@@ -1,4 +1,4 @@
-pragma solidity ^0.5.10;
+pragma solidity ^0.5.11;
 
 import "./commons/Ownable.sol";
 import "../installed_contracts/sorted-collection/contracts/SortedList.sol";
