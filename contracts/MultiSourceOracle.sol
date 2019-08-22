@@ -1,14 +1,16 @@
 pragma solidity ^0.5.10;
 
 import "./commons/Ownable.sol";
-import "./commons/AddressHeap.sol";
+import "../installed_contracts/sorted-collection/contracts/SortedList.sol";
+import "../installed_contracts/sorted-collection/contracts/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
 import "./utils/StringUtils.sol";
+import "./utils/StringUtils.sol";
 
 
-contract MultiSourceOracle is RateOracle, Ownable {
-    using AddressHeap for AddressHeap.Heap;
+contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
+    using SortedList for SortedList.List;
     using StringUtils for string;
 
     uint256 public constant BASE = 10 ** 18;
@@ -20,11 +22,11 @@ contract MultiSourceOracle is RateOracle, Ownable {
     event UpdatedMetadata(string _name, uint256 _decimals, string _maintainer);
 
     mapping(address => bool) public isSigner;
+    mapping(address => uint256) internal providedBy;
     mapping(address => string) public nameOfSigner;
     mapping(string => address) public signerWithName;
-    AddressHeap.Heap private topProposers;
-    AddressHeap.Heap private botProposers;
 
+    SortedList.List private list;
     RateOracle public upgrade;
     PausedProvider public pausedProvider;
 
@@ -51,10 +53,12 @@ contract MultiSourceOracle is RateOracle, Ownable {
         itoken = _token;
         icurrency = currency;
         imaintainer = _maintainer;
-        // Initialize structure
-        topProposers.initialize(true);
-        botProposers.initialize(false);
         pausedProvider = PausedProvider(msg.sender);
+    }
+
+    // Implemented for SortedListDelegate
+    function getValue(uint256 _id) external view returns (uint256) {
+        return providedBy[address(_id)];
     }
 
     // Oracle metadata interface
@@ -101,22 +105,6 @@ contract MultiSourceOracle is RateOracle, Ownable {
         );
     }
 
-    function getProvided(address _addr) external view returns (
-        bool _topHeap,
-        bool _botHeap,
-        uint256 _rate,
-        uint256 _indexHeap
-    ) {
-        _topHeap = topProposers.has(_addr);
-        _botHeap = botProposers.has(_addr);
-
-        if (_topHeap) {
-            (_indexHeap, _rate) = topProposers.getAddr(_addr);
-        } else if (_botHeap) {
-            (_indexHeap, _rate) = botProposers.getAddr(_addr);
-        }
-    }
-
     function setUpgrade(RateOracle _upgrade) external onlyOwner {
         emit Upgraded(address(upgrade), address(_upgrade));
         upgrade = _upgrade;
@@ -145,39 +133,14 @@ contract MultiSourceOracle is RateOracle, Ownable {
 
     function removeSigner(address _signer) external onlyOwner {
         string memory signerName = nameOfSigner[_signer];
-        emit RemoveSigner(_signer, signerName);
+        if (!isSigner[_signer]) {
+            return;
+        }
+
+        isSigner[_signer] = false;
         signerWithName[signerName] = address(0);
-
-        if (isSigner[_signer]) {
-            isSigner[_signer] = false;
-        }
-
-        if (topProposers.has(_signer)) {
-            // Send to bottom and pop
-            topProposers.update(_signer, 0);
-            topProposers.popTop();
-        } else if (botProposers.has(_signer)) {
-            // Send to top and pop
-            botProposers.update(_signer, uint96(uint256(-1)));
-            botProposers.popTop();
-        }
-
-        uint256 topSize = topProposers.size();
-        uint256 botSize = botProposers.size();
-
-        if (topSize != botSize) {
-            if (topSize > botSize + 1) {
-                (address topAddr, uint256 topValue) = topProposers.top();
-                topProposers.popTop();
-                botProposers.insert(topAddr, topValue);
-            } else if (botSize > topSize + 1) {
-                (address botAddr, uint256 botValue) = botProposers.top();
-                botProposers.popTop();
-                topProposers.insert(botAddr, botValue);
-            }
-        }
-
-        _equilibrate();
+        list.remove(uint256(_signer));
+        emit RemoveSigner(_signer, signerName);
     }
 
     function provide(address _signer, uint256 _rate) external onlyOwner {
@@ -185,15 +148,13 @@ contract MultiSourceOracle is RateOracle, Ownable {
         require(_rate != 0, "rate can't be zero");
         require(_rate < uint96(uint256(-1)), "rate too high");
 
-        if (topProposers.has(_signer)) {
-            topProposers.update(_signer, _rate);
-        } else if (botProposers.has(_signer)) {
-            botProposers.update(_signer, _rate);
-        } else {
-            _insert(_signer, _rate);
+        uint256 node = uint256(_signer);
+        if (list.exists(node)) {
+            list.remove(node);
         }
 
-        _equilibrate();
+        providedBy[_signer] = _rate;
+        list.insert(node, address(this));
     }
 
     function readSample(bytes calldata) external view returns (uint256, uint256) {
@@ -212,48 +173,6 @@ contract MultiSourceOracle is RateOracle, Ownable {
 
         // Tokens is always base
         _tokens = BASE;
-
-        uint256 topSize = topProposers.size();
-        uint256 botSize = botProposers.size();
-
-        if (topSize > botSize) {
-            (, _equivalent) = topProposers.top();
-        } else if (botSize > topSize) {
-            (, _equivalent) = botProposers.top();
-        } else {
-            // Calculate equivalent
-            (, uint256 topValue) = topProposers.top();
-            (, uint256 botValue) = botProposers.top();
-            _equivalent = (topValue + botValue) / 2;
-        }
-    }
-
-    function _insert(address _signer, uint256 _rate) private {
-        uint256 topSize = topProposers.size();
-        uint256 botSize = botProposers.size();
-
-        if (botSize < topSize) {
-            botProposers.insert(_signer, _rate);
-        } else {
-            topProposers.insert(_signer, _rate);
-        }
-    }
-
-    function _equilibrate() private {
-        (address topAddr, uint256 topValue) = topProposers.top();
-        (address botAddr, uint256 botValue) = botProposers.top();
-
-        if (topAddr == address(0) || botAddr == address(0)) {
-            return;
-        }
-
-        if (topValue < botValue) {
-            // Swap tops
-            topProposers.popTop();
-            botProposers.popTop();
-            // Insert reverted
-            topProposers.insert(botAddr, botValue);
-            botProposers.insert(topAddr, topValue);
-        }
+        _equivalent = list.median(address(this));
     }
 }

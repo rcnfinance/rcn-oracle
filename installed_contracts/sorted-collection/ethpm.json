@@ -1,0 +1,23 @@
+{
+  "authors": [
+    "Joaquin Pablo Gonzalez <jpgonzalezra@gmail.com>"
+  ],
+  "license": "MIT",
+  "description": "An utility library for using sorted list data structures.",
+  "keywords": [
+    "solidity",
+    "ethereum",
+    "smart",
+    "contracts"
+  ],
+  "links": {},
+  "sources": [
+    "./contracts/SortedList.sol",
+    "./contracts/SortedListDelegate.sol",
+    "./contracts/mock/SortedStructList.sol"
+  ],
+  "dependencies": {},
+  "manifest_version": 1,
+  "package_name": "sorted-collection",
+  "version": "1.0.0"
+}
