@@ -402,6 +402,13 @@ contract('Multi Source Oracle', function (accounts) {
             await Helper.tryCatchRevert(oldOracle.setUpgrade(newOracle.address), 'The owner should be the sender');
         });
     });
+    describe('Handle signers', async () => {
+        it('It should revert if signed is added twice', async () => {
+            const oracle = await createOracle('TEST-SIGNERS-1');
+            await this.factory.addSigner(oracle.address, accounts[0], 'signer accounts[0]', { from: this.owner });
+            await Helper.tryCatchRevert(this.factory.addSigner(oracle.address, accounts[0], 'signer [0]', { from: this.owner }), 'signer already defined');
+        });
+    });
     describe('Handle usernames', async () => {
         it('Should set the name of a signer', async () => {
             const oracle = await createOracle('TEST-NAME-1');
