@@ -371,6 +371,11 @@ contract('Multi Source Oracle', function (accounts) {
         await createOracle('TEST-DUPLICATED');
         await Helper.tryCatchRevert(createOracle('TEST-DUPLICATED'), 'Oracle already exists');
     });
+    it('Should fail to provide from invalid signer', async () => {
+        const oracle = await createOracle('TEST-INVALID-SIGNER');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provide(oracle.address, 100000, { from: accounts[1] }), 'signer not valid');
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
