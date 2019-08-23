@@ -386,6 +386,9 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await Helper.tryCatchRevert(this.factory.provide(oracle.address, bn(2).pow(bn(96)), { from: accounts[0] }), 'rate too high');
     });
+    it('Should fail to create if symbol is too long', async () => {
+        await Helper.tryCatchRevert(createOracle('TEST-CREATE-ORACLE-WITH-SYMBOL-TOO-LONG'), 'string too long');
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
