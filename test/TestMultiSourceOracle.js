@@ -376,6 +376,11 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await Helper.tryCatchRevert(this.factory.provide(oracle.address, 100000, { from: accounts[1] }), 'signer not valid');
     });
+    it('Should fail if provided rate is zero', async () => {
+        const oracle = await createOracle('TEST-RATE-ZERO');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provide(oracle.address, 0, { from: accounts[0] }), 'rate can\'t be zero');
+    });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
             const oldOracle = await createOracle('TEST-UPGRADE-1-OLD');
