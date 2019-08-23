@@ -11,6 +11,11 @@ function bn (number) {
     return new BN(number);
 }
 
+function toUint96 (number) {
+    const hex = number.toString(16);
+    return `0x${'0'.repeat(24 - hex.length)}${hex}`;
+}
+
 function perm (xs) {
     const ret = [];
 
@@ -334,9 +339,68 @@ contract('Multi Source Oracle', function (accounts) {
         const sample3 = await oracle.readSample();
         expect(sample3[1]).to.eq.BN(bn(300100));
     });
+    it('Should provide multiple values to the oracles', async () => {
+        const oracleA = await createOracle('TEST-16-A');
+        const oracleB = await createOracle('TEST-16-B');
+        await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracleA.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.addSigner(oracleB.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracleB.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.provideMultiple(
+            [
+                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[0],
+            }
+        );
+        await this.factory.provideMultiple(
+            [
+                `${toUint96(200000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(100)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[1],
+            }
+        );
+        const sampleA = await oracleA.readSample();
+        expect(sampleA[1]).to.eq.BN(bn(150000));
+        const sampleB = await oracleB.readSample();
+        expect(sampleB[1]).to.eq.BN(bn(150));
+    });
     it('Should revert on duplicated oracle', async () => {
         await createOracle('TEST-DUPLICATED');
         await Helper.tryCatchRevert(createOracle('TEST-DUPLICATED'), 'Oracle already exists');
+    });
+    it('Should fail to provide from invalid signer', async () => {
+        const oracle = await createOracle('TEST-INVALID-SIGNER');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provide(oracle.address, 100000, { from: accounts[1] }), 'signer not valid');
+    });
+    it('Should fail to provide multiple from invalid signer', async () => {
+        const oracleA = await createOracle('TEST-INVALID-SIGNER-A');
+        const oracleB = await createOracle('TEST-INVALID-SIGNER-B');
+        await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provideMultiple(
+            [
+                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[0],
+            }
+        ), 'signer not valid');
+    });
+    it('Should fail if provided rate is zero', async () => {
+        const oracle = await createOracle('TEST-RATE-ZERO');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provide(oracle.address, 0, { from: accounts[0] }), 'rate can\'t be zero');
+    });
+    it('Should fail if provided rate overflows uint96', async () => {
+        const oracle = await createOracle('TEST-RATE-TOO-HIGH');
+        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provide(oracle.address, bn(2).pow(bn(96)), { from: accounts[0] }), 'rate too high');
+    });
+    it('Should fail to create if symbol is too long', async () => {
+        await Helper.tryCatchRevert(createOracle('TEST-CREATE-ORACLE-WITH-SYMBOL-TOO-LONG'), 'string too long');
     });
     describe('Upgrade oracle', async () => {
         it('It should upgrade an Oracle', async () => {
@@ -367,6 +431,19 @@ contract('Multi Source Oracle', function (accounts) {
             const newOracle = await createOracle('TEST-UPGRADE-3-NEW');
 
             await Helper.tryCatchRevert(oldOracle.setUpgrade(newOracle.address), 'The owner should be the sender');
+        });
+    });
+    describe('Handle signers', async () => {
+        it('It should revert if signed is added twice', async () => {
+            const oracle = await createOracle('TEST-SIGNERS-1');
+            await this.factory.addSigner(oracle.address, accounts[0], 'signer accounts[0]', { from: this.owner });
+            await Helper.tryCatchRevert(this.factory.addSigner(oracle.address, accounts[0], 'signer [0]', { from: this.owner }), 'signer already defined');
+        });
+        it('Should remove a signer twice and not revert', async () => {
+            const oracle = await createOracle('TEST-SIGNERS-2');
+            await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
+            await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+            await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
         });
     });
     describe('Handle usernames', async () => {
@@ -401,6 +478,10 @@ contract('Multi Source Oracle', function (accounts) {
 
             await this.factory.addSigner(oracle.address, accounts[1], 'name 2', { from: this.owner });
             await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'name can\'t be empty');
+        });
+        it('Should fail to set username of a non-existant signer', async () => {
+            const oracle = await createOracle('TEST-NAME-5');
+            await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'signer not defined');
         });
     });
     describe('Read and set metadta', async () => {
@@ -480,6 +561,10 @@ contract('Multi Source Oracle', function (accounts) {
                 ),
                 'The owner should be the sender'
             );
+        });
+        it('It should return an empty Oracle URL', async () => {
+            const oracle = await createOracle('TEST-METADATA-6');
+            expect(await oracle.url()).to.be.equal('');
         });
     });
     describe('Pausable oracle', async () => {
