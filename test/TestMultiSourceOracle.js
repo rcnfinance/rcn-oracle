@@ -376,6 +376,19 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await Helper.tryCatchRevert(this.factory.provide(oracle.address, 100000, { from: accounts[1] }), 'signer not valid');
     });
+    it('Should fail to provide multiple from invalid signer', async () => {
+        const oracleA = await createOracle('TEST-INVALID-SIGNER-A');
+        const oracleB = await createOracle('TEST-INVALID-SIGNER-B');
+        await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await Helper.tryCatchRevert(this.factory.provideMultiple(
+            [
+                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[0],
+            }
+        ), 'signer not valid');
+    });
     it('Should fail if provided rate is zero', async () => {
         const oracle = await createOracle('TEST-RATE-ZERO');
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
