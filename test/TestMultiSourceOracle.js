@@ -435,6 +435,10 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.addSigner(oracle.address, accounts[1], 'name 2', { from: this.owner });
             await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'name can\'t be empty');
         });
+        it('Should fail to set username of a non-existant signer', async () => {
+            const oracle = await createOracle('TEST-NAME-5');
+            await Helper.tryCatchRevert(this.factory.setName(oracle.address, accounts[1], '', { from: this.owner }), 'signer not defined');
+        });
     });
     describe('Read and set metadta', async () => {
         it('It should create an Oracle with metadata', async () => {
