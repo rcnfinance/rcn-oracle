@@ -514,6 +514,10 @@ contract('Multi Source Oracle', function (accounts) {
                 'The owner should be the sender'
             );
         });
+        it('It should return an empty Oracle URL', async () => {
+            const oracle = await createOracle('TEST-METADATA-6');
+            expect(await oracle.url()).to.be.equal('');
+        });
     });
     describe('Pausable oracle', async () => {
         it('It start unpaused', async () => {
