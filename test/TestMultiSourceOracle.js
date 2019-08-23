@@ -11,6 +11,11 @@ function bn (number) {
     return new BN(number);
 }
 
+function toUint96 (number) {
+    const hex = number.toString(16);
+    return `0x${'0'.repeat(24 - hex.length)}${hex}`;
+}
+
 function perm (xs) {
     const ret = [];
 
@@ -333,6 +338,34 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 5000000, { from: accounts[4] });
         const sample3 = await oracle.readSample();
         expect(sample3[1]).to.eq.BN(bn(300100));
+    });
+    it('Should provide multiple values to the oracles', async () => {
+        const oracleA = await createOracle('TEST-16-A');
+        const oracleB = await createOracle('TEST-16-B');
+        await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracleA.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.addSigner(oracleB.address, accounts[0], 'account[0] signer', { from: this.owner });
+        await this.factory.addSigner(oracleB.address, accounts[1], 'account[1] signer', { from: this.owner });
+        await this.factory.provideMultiple(
+            [
+                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[0],
+            }
+        );
+        await this.factory.provideMultiple(
+            [
+                `${toUint96(200000)}${oracleA.address.replace('0x', '')}`,
+                `${toUint96(100)}${oracleB.address.replace('0x', '')}`,
+            ], {
+                from: accounts[1],
+            }
+        );
+        const sampleA = await oracleA.readSample();
+        expect(sampleA[1]).to.eq.BN(bn(150000));
+        const sampleB = await oracleB.readSample();
+        expect(sampleB[1]).to.eq.BN(bn(150));
     });
     it('Should revert on duplicated oracle', async () => {
         await createOracle('TEST-DUPLICATED');
