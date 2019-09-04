@@ -56,12 +56,11 @@ library SortedList {
      * @return bool, uint256, uint256 true if node exists or false otherwise, previous node, next node
      */
     function getNode(List storage self, uint256 _node) internal view returns (bool, uint256, uint256) {
-        
         if (!exists(self, _node)) {
             return (false, 0, 0);
-        } 
+        }
+
         return (true, self.list[_node][LEFT], self.list[_node][RIGHT]);
-    
     }
 
     /**
@@ -84,8 +83,8 @@ library SortedList {
         if (exists(self, _node)) {
             return (true, self.list[_node][RIGHT]);
         }
-        return (false, 0);
 
+        return (false, 0);
     }
 
     /**
@@ -106,7 +105,6 @@ library SortedList {
      * @return bool true if success, false otherwise
      */
     function insert(List storage self, uint256 _node, address _delegate) internal returns (bool) {
-
         uint256 position = getPosition(self, _node, _delegate);
         if (exists(self, _node) && !exists(self, position)) {
             return false;
@@ -127,11 +125,11 @@ library SortedList {
      * @return uint256 next node with a value less than _node
      */
     function getPosition(List storage self, uint256 _node, address _delegate) internal view returns (uint256) {
-        
         (, uint256 next) = getAdjacent(self, HEAD);
         while (next != 0 && SortedListDelegate(_delegate).getValue(_node) > SortedListDelegate(_delegate).getValue(next)) {
             next = self.list[next][RIGHT];
         }
+
         return next;
 
     }
@@ -144,7 +142,6 @@ library SortedList {
      * @return uint256 the node value
      */
     function getValue(List storage self, uint256 _position, address _delegate) internal view returns (uint256) {
-        
         (, uint256 next) = getAdjacent(self, HEAD);
         for (uint256 i = 0; i < _position; i++) {
             next = self.list[next][RIGHT];
@@ -163,6 +160,7 @@ library SortedList {
         if (_node == NULL || !exists(self, _node)) {
             return 0;
         }
+
         createLink(self, self.list[_node][LEFT], self.list[_node][RIGHT], RIGHT);
         delete self.list[_node][LEFT];
         delete self.list[_node][RIGHT];
@@ -176,15 +174,12 @@ library SortedList {
      * @return uint256 the median
      */
     function median(List storage self, address _delegate) internal view returns (uint256) {
-
         uint256 elements = sizeOf(self);
         if (elements % 2 == 0) {
             uint256 sum = getValue(self, elements / 2, _delegate) + getValue(self, elements / 2 - 1, _delegate);
             return sum / 2;
         } else {
             return getValue(self, elements / 2, _delegate);
-        } 
-
+        }
     }
-
 }
