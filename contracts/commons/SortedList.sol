@@ -21,6 +21,16 @@ library SortedList {
     }
 
     /**
+     * @dev Returns the value of a node
+     * @param self stored linked list from contract
+     * @param _node a node to search value of
+     * @return value of the node
+     */
+    function get(List storage self, uint256 _node) internal view returns (uint256) {
+        return values[_node];
+    }
+
+    /**
      * @dev Checks if the node exists
      * @param self stored linked list from contract
      * @param _node a node to search for
