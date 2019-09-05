@@ -1,7 +1,5 @@
 pragma solidity 0.5.11;
 
-import "./SortedListDelegate.sol";
-
 
 /**
  * @title SortedList
@@ -18,6 +16,7 @@ library SortedList {
 
     struct List {
         // node_id => prev or next => node_id
+        mapping(uint256 => uint256) values;
         mapping(uint256 => mapping(bool => uint256)) list;
     }
 
@@ -104,29 +103,25 @@ library SortedList {
      * @param _node  new node to insert
      * @return bool true if success, false otherwise
      */
-    function insert(List storage self, uint256 _node, address _delegate) internal returns (bool) {
-        uint256 position = getPosition(self, _node, _delegate);
-        if (exists(self, _node) && !exists(self, position)) {
-            return false;
-        }
-
+    function insert(List storage self, uint256 _node, uint256 _value) internal returns (bool) {
+        uint256 position = getPosition(self, _value);
+        // TODO Check double insert node already exists
+        self.values[_node] = _value;
         uint256 c = self.list[position][LEFT];
         createLink(self, position, _node, LEFT);
         createLink(self, _node, c, LEFT);
         return true;
-        
     }
 
     /**
      * @dev Get the node position to add.
      * @param self stored linked list from contract
-     * @param _node value to seek
-     * @param _delegate the delagete instance
-     * @return uint256 next node with a value less than _node
+     * @param _value value to seek
+     * @return uint256 next node with a value less than _value
      */
-    function getPosition(List storage self, uint256 _node, address _delegate) internal view returns (uint256) {
+    function getPosition(List storage self, uint256 _value) internal view returns (uint256) {
         (, uint256 next) = getAdjacent(self, HEAD);
-        while (next != 0 && SortedListDelegate(_delegate).getValue(_node) > SortedListDelegate(_delegate).getValue(next)) {
+        while (next != 0 && _value > self.values[next]) {
             next = self.list[next][RIGHT];
         }
 
@@ -138,16 +133,15 @@ library SortedList {
      * @dev Get node value given position
      * @param self stored linked list from contract
      * @param _position node position to consult
-     * @param _delegate the delagete instance
      * @return uint256 the node value
      */
-    function getValue(List storage self, uint256 _position, address _delegate) internal view returns (uint256) {
+    function getValue(List storage self, uint256 _position) internal view returns (uint256) {
         (, uint256 next) = getAdjacent(self, HEAD);
         for (uint256 i = 0; i < _position; i++) {
             next = self.list[next][RIGHT];
         }
 
-        return SortedListDelegate(_delegate).getValue(next);
+        return self.values[next];
     }
 
     /**
@@ -170,16 +164,15 @@ library SortedList {
     /**
      * @dev Get median beetween entry from the sorted list
      * @param self stored linked list from contract
-     * @param _delegate the delagete instance
      * @return uint256 the median
      */
-    function median(List storage self, address _delegate) internal view returns (uint256) {
+    function median(List storage self) internal view returns (uint256) {
         uint256 elements = sizeOf(self);
         if (elements % 2 == 0) {
-            uint256 sum = getValue(self, elements / 2, _delegate) + getValue(self, elements / 2 - 1, _delegate);
+            uint256 sum = getValue(self, elements / 2) + getValue(self, elements / 2 - 1);
             return sum / 2;
         } else {
-            return getValue(self, elements / 2, _delegate);
+            return getValue(self, elements / 2);
         }
     }
 }
