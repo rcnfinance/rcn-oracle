@@ -5,7 +5,7 @@ import "../utils/Math.sol";
 
 /**
  * @title SortedList
- * @author Joaquin Gonzalez (jpgonzalezra@gmail.com)
+ * @author Joaquin Gonzalez & Agustin Aguilar (jpgonzalezra@gmail.com & agusxrun@gmail.com)
  * @dev An utility library for using sorted list data structures.
  */
 library SortedList {
