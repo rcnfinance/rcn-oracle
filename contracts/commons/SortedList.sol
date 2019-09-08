@@ -6,6 +6,7 @@ pragma solidity 0.5.11;
  * @dev An utility library for using sorted list data structures.
  */
 library SortedList {
+    using SortedList for SortedList.List;
 
     uint256 private constant NULL = 0;
     uint256 private constant HEAD = 0;
@@ -50,7 +51,7 @@ library SortedList {
         if (self.exists[_node]) {
 
             // Load the new and old position
-            (uint256 leftOldPos, uint256 leftNewPos) = findOldAndNewLeftPosition(self, _node, _value);
+            (uint256 leftOldPos, uint256 leftNewPos) = self.findOldAndNewLeftPosition(_node, _value);
 
             // If node position changed, we need to re-do the linking
             if (leftOldPos != leftNewPos && _node != leftNewPos) {
@@ -68,7 +69,7 @@ library SortedList {
             // Set node as existing
             self.exists[_node] = true;
             // Find position for the new node and update the links
-            uint256 leftPosition = findLeftPosition(self, _value);
+            uint256 leftPosition = self.findLeftPosition(_value);
             uint256 next = self.links[leftPosition];
             self.links[leftPosition] = _node;
             self.links[_node] = next;
@@ -191,10 +192,10 @@ library SortedList {
     function median(List storage self) internal view returns (uint256) {
         uint256 elements = self.size;
         if (elements % 2 == 0) {
-            uint256 node = nodeAt(self, elements / 2 - 1);
+            uint256 node = self.nodeAt(elements / 2 - 1);
             return average(self.values[node], self.values[self.links[node]]);
         } else {
-            return self.values[nodeAt(self, elements / 2)];
+            return self.values[self.nodeAt(elements / 2)];
         }
     }
 }
