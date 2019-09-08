@@ -17,7 +17,6 @@ library SortedList {
     bool private constant RIGHT = true;
 
     struct List {
-        // node_id => prev or next => node_id
         uint256 size;
         mapping(uint256 => uint256) values;
         mapping(uint256 => uint256) links;
