@@ -59,6 +59,7 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 100000);
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(100000));
+        expect(await oracle.providedBy(accounts[0])).to.eq.BN(bn(100000));
     });
 
     it('Should return average rate with a two providers', async () => {
@@ -69,6 +70,8 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(150000));
+        expect(await oracle.providedBy(accounts[0])).to.eq.BN(bn(100000));
+        expect(await oracle.providedBy(accounts[1])).to.eq.BN(bn(200000));
     });
 
     it('Should return the median rate with a three providers', async () => {
