@@ -11,10 +11,7 @@ import "../utils/Math.sol";
 library SortedList {
     using SortedList for SortedList.List;
 
-    uint256 private constant NULL = 0;
     uint256 private constant HEAD = 0;
-
-    bool private constant RIGHT = true;
 
     struct List {
         uint256 size;
