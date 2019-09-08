@@ -535,4 +535,26 @@ contract TestSortedList {
         Assert.equal(list.median(), 400, "median should return the median of the nodes");
         checkIntegrity(list);
     }
+
+    function externalRemoveNonNode() external {
+        SortedList.List storage list = getList();
+
+        list.set(1000, 100);
+        list.set(2000, 200);
+        list.set(3000, 300);
+        list.set(4000, 400);
+        list.set(5000, 500);
+
+        list.remove(6000);
+    }
+
+    function testFailToRemoveNonNode() external {
+        (bool success, ) = address(this).call(
+            abi.encodeWithSelector(
+                this.externalRemoveNonNode.selector
+            )
+        );
+
+        Assert.isFalse(success, "call to remove non existent node should have failed");
+    }
 }
