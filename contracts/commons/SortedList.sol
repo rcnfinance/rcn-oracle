@@ -1,5 +1,8 @@
 pragma solidity 0.5.11;
 
+import "../utils/Math.sol";
+
+
 /**
  * @title SortedList
  * @author Joaquin Gonzalez (jpgonzalezra@gmail.com)
@@ -179,11 +182,6 @@ library SortedList {
         delete self.values[_node];
     }
 
-    function average(uint256 a, uint256 b) private pure returns (uint256) {
-        // (a + b) / 2 can overflow, so we distribute
-        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
-    }
-
     /**
      * @dev Get median beetween entry from the sorted list
      * @param self stored linked list from contract
@@ -193,7 +191,7 @@ library SortedList {
         uint256 elements = self.size;
         if (elements % 2 == 0) {
             uint256 node = self.nodeAt(elements / 2 - 1);
-            return average(self.values[node], self.values[self.links[node]]);
+            return Math.average(self.values[node], self.values[self.links[node]]);
         } else {
             return self.values[self.nodeAt(elements / 2)];
         }
