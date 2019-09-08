@@ -35,16 +35,6 @@ library SortedList {
     }
 
     /**
-     * @dev Checks if the node exists
-     * @param self stored linked list from contract
-     * @param _node a node to search for
-     * @return bool true if node exists, false otherwise
-     */
-    function exists(List storage self, uint256 _node) internal view returns (bool) {
-        return self.exists[_node];
-    }
-
-    /**
      * @dev Insert node `_node`
      * @param self stored linked list from contract
      * @param _node  new node to insert
@@ -86,7 +76,7 @@ library SortedList {
         List storage self,
         uint256 _node,
         uint256 _value
-    ) private view returns (
+    ) internal view returns (
         uint256 leftOldPos,
         uint256 leftNewPos
     ) {
@@ -130,7 +120,7 @@ library SortedList {
      * @param _value value to seek
      * @return uint256 left node for the given value
      */
-    function findLeftPosition(List storage self, uint256 _value) private view returns (uint256) {
+    function findLeftPosition(List storage self, uint256 _value) internal view returns (uint256) {
         uint256 next = HEAD;
         uint256 c;
 
