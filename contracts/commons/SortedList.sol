@@ -1,6 +1,5 @@
 pragma solidity 0.5.11;
 
-
 /**
  * @title SortedList
  * @author Joaquin Gonzalez (jpgonzalezra@gmail.com)
@@ -11,13 +10,14 @@ library SortedList {
     uint256 private constant NULL = 0;
     uint256 private constant HEAD = 0;
 
-    bool private constant LEFT = false;
     bool private constant RIGHT = true;
 
     struct List {
         // node_id => prev or next => node_id
+        uint256 size;
         mapping(uint256 => uint256) values;
-        mapping(uint256 => mapping(bool => uint256)) list;
+        mapping(uint256 => uint256) links;
+        mapping(uint256 => bool) exists;
     }
 
     /**
@@ -27,7 +27,7 @@ library SortedList {
      * @return value of the node
      */
     function get(List storage self, uint256 _node) internal view returns (uint256) {
-        return values[_node];
+        return self.values[_node];
     }
 
     /**
@@ -37,106 +37,105 @@ library SortedList {
      * @return bool true if node exists, false otherwise
      */
     function exists(List storage self, uint256 _node) internal view returns (bool) {
-        if (self.list[_node][LEFT] == HEAD && self.list[_node][RIGHT] == HEAD) {
-            return (self.list[HEAD][RIGHT] == _node);
-        }
-        return true;
-    }
-
-    /**
-     * @dev Returns the number of elements in the list
-     * @param self stored linked list from contract
-     * @return uint256
-     */
-    function sizeOf(List storage self) internal view returns (uint256) {
-        uint256 total;
-        (, uint256 i) = getAdjacent(self, HEAD);
-        while (i != HEAD) {
-            (, i) = getAdjacent(self, i);
-            total++;
-        }
-        return total;
-    }
-
-    /**
-     * @dev Returns the links of a node as a tuple
-     * @param self stored linked list from contract
-     * @param _node id of the node to get
-     * @return bool, uint256, uint256 true if node exists or false otherwise, previous node, next node
-     */
-    function getNode(List storage self, uint256 _node) internal view returns (bool, uint256, uint256) {
-        if (!exists(self, _node)) {
-            return (false, 0, 0);
-        }
-
-        return (true, self.list[_node][LEFT], self.list[_node][RIGHT]);
-    }
-
-    /**
-     * @dev Returns the link of a node `_node` in direction `RIGHT`.
-     * @param self stored linked list from contract
-     * @param _node id of the node to step from
-     * @return bool, uint256 true if node exists or false otherwise, next node
-     */
-    function getNextNode(List storage self, uint256 _node) internal view returns (bool, uint256) {
-        return getAdjacent(self, _node);
-    }
-
-    /**
-     * @dev Returns the link of a node `_node` in direction `_direction`.
-     * @param self stored linked list from contract
-     * @param _node id of the node to step from
-     * @return bool, uint256 true if node exists or false otherwise, node in _direction
-     */
-    function getAdjacent(List storage self, uint256 _node) internal view returns (bool, uint256) {
-        if (exists(self, _node)) {
-            return (true, self.list[_node][RIGHT]);
-        }
-
-        return (false, 0);
-    }
-
-    /**
-     * @dev Creates a bidirectional link between two nodes on direction `_direction` (LEFT or RIGHT)
-     * @param self stored linked list from contract
-     * @param _node first node for linking
-     * @param _link  node to link to in the _direction
-     */
-    function createLink(List storage self, uint256 _node, uint256 _link, bool _direction) internal {
-        self.list[_link][!_direction] = _node;
-        self.list[_node][_direction] = _link;
+        return self.exists[_node];
     }
 
     /**
      * @dev Insert node `_node`
      * @param self stored linked list from contract
      * @param _node  new node to insert
-     * @return bool true if success, false otherwise
      */
-    function insert(List storage self, uint256 _node, uint256 _value) internal returns (bool) {
-        uint256 position = getPosition(self, _value);
-        // TODO Check double insert node already exists
+    function set(List storage self, uint256 _node, uint256 _value) internal {
+        // Check if node previusly existed
+        if (self.exists[_node]) {
+
+            // Load the new and old position
+            (uint256 leftOldPos, uint256 leftNewPos) = findOldAndNewLeftPosition(self, _node, _value);
+
+            // If node position changed, we need to re-do the linking
+            if (leftOldPos != leftNewPos && _node != leftNewPos) {
+                // Remove prev link
+                self.links[leftOldPos] = self.links[_node];
+
+                // Create new link
+                uint256 next = self.links[leftNewPos];
+                self.links[leftNewPos] = _node;
+                self.links[_node] = next;
+            }
+        } else {
+            // Update size of the list
+            self.size = self.size + 1;
+            // Set node as existing
+            self.exists[_node] = true;
+            // Find position for the new node and update the links
+            uint256 leftPosition = findLeftPosition(self, _value);
+            uint256 next = self.links[leftPosition];
+            self.links[leftPosition] = _node;
+            self.links[_node] = next;
+        }
+
+        // Set the value for the node
         self.values[_node] = _value;
-        uint256 c = self.list[position][LEFT];
-        createLink(self, position, _node, LEFT);
-        createLink(self, _node, c, LEFT);
-        return true;
+    }
+
+    function findOldAndNewLeftPosition(
+        List storage self,
+        uint256 _node,
+        uint256 _value
+    ) private view returns (
+        uint256 leftOldPos,
+        uint256 leftNewPos
+    ) {
+        // Find old and new value positions
+        bool foundOld;
+        bool foundNew;
+
+        // Iterate links
+        uint256 c = HEAD;
+        while (!foundOld || !foundNew) {
+            uint256 next = self.links[c];
+
+            // We should have found the old position
+            // the new one must be at the end
+            if (next == 0) {
+                leftNewPos = c;
+                break;
+            }
+
+            // If the next node is the current node
+            // we found the old position
+            if (next == _node) {
+                leftOldPos = c;
+                foundOld = true;
+            }
+
+            // If the next value is higher and we didn't found one yet
+            // the next value if the position
+            if (self.values[next] > _value && !foundNew) {
+                leftNewPos = c;
+                foundNew = true;
+            }
+
+            c = next;
+        }
     }
 
     /**
-     * @dev Get the node position to add.
+     * @dev Get the left node for a given value
      * @param self stored linked list from contract
      * @param _value value to seek
-     * @return uint256 next node with a value less than _value
+     * @return uint256 left node for the given value
      */
-    function getPosition(List storage self, uint256 _value) internal view returns (uint256) {
-        (, uint256 next) = getAdjacent(self, HEAD);
-        while (next != 0 && _value > self.values[next]) {
-            next = self.list[next][RIGHT];
-        }
+    function findLeftPosition(List storage self, uint256 _value) private view returns (uint256) {
+        uint256 next = HEAD;
+        uint256 c;
 
-        return next;
+        do {
+            c = next;
+            next = self.links[c];
+        } while(self.values[next] < _value && next != 0);
 
+        return c;
     }
 
     /**
@@ -145,30 +144,43 @@ library SortedList {
      * @param _position node position to consult
      * @return uint256 the node value
      */
-    function getValue(List storage self, uint256 _position) internal view returns (uint256) {
-        (, uint256 next) = getAdjacent(self, HEAD);
+    function nodeAt(List storage self, uint256 _position) internal view returns (uint256) {
+        uint256 next = self.links[HEAD];
         for (uint256 i = 0; i < _position; i++) {
-            next = self.list[next][RIGHT];
+            next = self.links[next];
         }
 
-        return self.values[next];
+        return next;
     }
 
     /**
      * @dev Removes an entry from the sorted list
      * @param self stored linked list from contract
      * @param _node node to remove from the list
-     * @return uint256 the removed node
      */
-    function remove(List storage self, uint256 _node) internal returns (uint256) {
-        if (_node == NULL || !exists(self, _node)) {
-            return 0;
+    function remove(List storage self, uint256 _node) internal {
+        require(self.exists[_node], "the node does not exists");
+
+        uint256 c = self.links[HEAD];
+        while (c != 0) {
+            uint256 next = self.links[c];
+            if (next == _node) {
+                break;
+            }
+
+            c = next;
         }
 
-        createLink(self, self.list[_node][LEFT], self.list[_node][RIGHT], RIGHT);
-        delete self.list[_node][LEFT];
-        delete self.list[_node][RIGHT];
-        return _node;
+        self.size -= 1;
+        self.exists[_node] = false;
+        self.links[c] = self.links[_node];
+        delete self.links[_node];
+        delete self.values[_node];
+    }
+
+    function average(uint256 a, uint256 b) private pure returns (uint256) {
+        // (a + b) / 2 can overflow, so we distribute
+        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);
     }
 
     /**
@@ -177,12 +189,12 @@ library SortedList {
      * @return uint256 the median
      */
     function median(List storage self) internal view returns (uint256) {
-        uint256 elements = sizeOf(self);
+        uint256 elements = self.size;
         if (elements % 2 == 0) {
-            uint256 sum = getValue(self, elements / 2) + getValue(self, elements / 2 - 1);
-            return sum / 2;
+            uint256 node = nodeAt(self, elements / 2 - 1);
+            return average(self.values[node], self.values[self.links[node]]);
         } else {
-            return getValue(self, elements / 2);
+            return self.values[nodeAt(self, elements / 2)];
         }
     }
 }
