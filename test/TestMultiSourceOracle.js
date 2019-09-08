@@ -439,11 +439,11 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.addSigner(oracle.address, accounts[0], 'signer accounts[0]', { from: this.owner });
             await Helper.tryCatchRevert(this.factory.addSigner(oracle.address, accounts[0], 'signer [0]', { from: this.owner }), 'signer already defined');
         });
-        it('Should remove a signer twice and not revert', async () => {
+        it('Should fail to remove a signer twice', async () => {
             const oracle = await createOracle('TEST-SIGNERS-2');
             await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
             await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
-            await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+            await Helper.tryCatchRevert(this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner }), 'address is not a signer');
         });
     });
     describe('Handle usernames', async () => {
