@@ -55,6 +55,15 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         uint256 _rate
     );
 
+    event OraclePaused(
+        address indexed _oracle,
+        address _pauser
+    );
+
+    event OracleStarted(
+        address indexed _oracle
+    );
+
     function newOracle(
         string calldata _symbol,
         string calldata _name,
@@ -127,6 +136,20 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     function setUpgrade(address _oracle, address _upgrade) external onlyOwner {
         MultiSourceOracle(_oracle).setUpgrade(RateOracle(_upgrade));
         emit Upgraded(_oracle, _upgrade);
+    }
+
+    function pauseOracle(address _oracle) external {
+        require(
+            canPause[msg.sender] ||
+            msg.sender == _owner,
+            "not authorized to pause"
+        );
+
+        MultiSourceOracle(_oracle).pause();
+    }
+
+    function startOracle(address _oracle) external onlyOwner {
+        MultiSourceOracle(_oracle).start();
     }
 
     function setMetadata(
