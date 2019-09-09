@@ -206,10 +206,12 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         );
 
         MultiSourceOracle(_oracle).pause();
+        emit OraclePaused(_oracle, msg.sender);
     }
 
     function startOracle(address _oracle) external onlyOwner {
         MultiSourceOracle(_oracle).start();
+        emit OracleStarted(_oracle);
     }
 
     /**
