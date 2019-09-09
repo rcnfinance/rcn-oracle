@@ -128,6 +128,25 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     }
 
     /**
+     * @dev Adds a `_signer` to multiple `_oracles`
+     * @param _oracles List of oracles on which add the `_signer`
+     * @param _signer Address of the signer to be added
+     * @param _name Human readable metadata name of the `_signer`
+     * @notice Acts as a proxy for all the `_oracles` `_oracle.addSigner`
+     */
+    function addSignerToOracles(
+        address[] calldata _oracles,
+        address _signer,
+        string calldata _name
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _oracles.length; i++) {
+            address oracle = _oracles[i];
+            MultiSourceOracle(oracle).addSigner(_signer, _name);
+            emit AddSigner(oracle, _signer, _name);
+        }
+    }
+
+    /**
      * @dev Updates the `_name` of a given `_signer`@`_oracle`
      * @param _oracle Address of the oracle on which the `_signer` it's found
      * @param _signer Address of the signer to be updated
@@ -152,6 +171,24 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     function removeSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).removeSigner(_signer);
         emit RemoveSigner(_oracle, _signer);
+    }
+
+
+    /**
+     * @dev Removes a `_signer` from multiple `_oracles`
+     * @param _oracles List of oracles on which remove the `_signer`
+     * @param _signer Address of the signer to be removed
+     * @notice Acts as a proxy for all the `_oracles` `_oracle.removeSigner`
+     */
+    function removeSignerFromOracles(
+        address[] calldata _oracles,
+        address _signer
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _oracles.length; i++) {
+            address oracle = _oracles[i];
+            MultiSourceOracle(oracle).removeSigner(_signer);
+            emit RemoveSigner(oracle, _signer);
+        }
     }
 
     /**

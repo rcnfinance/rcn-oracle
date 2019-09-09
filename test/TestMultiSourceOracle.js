@@ -445,6 +445,118 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
             await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
         });
+        it('Should add multiple signers at once', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-3A');
+            const oracleB = await createOracle('TEST-SIGNERS-3B');
+            const oracleC = await createOracle('TEST-SIGNERS-3C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(true);
+        });
+        it('Should remove multiple signers at once', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-4A');
+            const oracleB = await createOracle('TEST-SIGNERS-4B');
+            const oracleC = await createOracle('TEST-SIGNERS-4C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            await this.factory.removeSignerFromOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                {
+                    from: this.owner,
+                }
+            );
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(false);
+        });
+        it('Should fail to add multiple signers if caller is not the owner', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-5A');
+            const oracleB = await createOracle('TEST-SIGNERS-5B');
+            const oracleC = await createOracle('TEST-SIGNERS-5C');
+
+            await Helper.tryCatchRevert(this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: accounts[2],
+                }
+            ), 'The owner should be the sender');
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(false);
+        });
+        it('Should fail to remove multiple signers if caller is not the owner', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-6A');
+            const oracleB = await createOracle('TEST-SIGNERS-6B');
+            const oracleC = await createOracle('TEST-SIGNERS-6C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            await Helper.tryCatchRevert(this.factory.removeSignerFromOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                {
+                    from: accounts[2],
+                }
+            ), 'The owner should be the sender');
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(true);
+        });
     });
     describe('Handle usernames', async () => {
         it('Should set the name of a signer', async () => {
