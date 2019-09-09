@@ -198,6 +198,11 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         emit Upgraded(_oracle, _upgrade);
     }
 
+    /**
+     * @dev Pauses the given `_oracle`
+     * @param _oracle oracle address to be paused
+     * @notice Acts as a proxy of `_oracle.pause`
+     */
     function pauseOracle(address _oracle) external {
         require(
             canPause[msg.sender] ||
@@ -209,6 +214,11 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         emit OraclePaused(_oracle, msg.sender);
     }
 
+    /**
+     * @dev Starts the given `_oracle`
+     * @param _oracle oracle address to be started
+     * @notice Acts as a proxy of `_oracle.start`
+     */
     function startOracle(address _oracle) external onlyOwner {
         MultiSourceOracle(_oracle).start();
         emit OracleStarted(_oracle);
