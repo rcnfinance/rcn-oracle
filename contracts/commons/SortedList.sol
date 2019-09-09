@@ -21,7 +21,7 @@ library SortedList {
     }
 
     /**
-     * @dev Returns the value of a node
+     * @dev Returns the value of a `_node`
      * @param self stored linked list from contract
      * @param _node a node to search value of
      * @return value of the node
@@ -31,9 +31,12 @@ library SortedList {
     }
 
     /**
-     * @dev Insert node `_node`
+     * @dev Insert node `_node` with a value
      * @param self stored linked list from contract
-     * @param _node  new node to insert
+     * @param _node new node to insert
+     * @param _value value of the new `_node` to insert
+     * @notice If the `_node` does not exists, it's added to the list
+     *   if the `_node` already exists, it updates its value.
      */
     function set(List storage self, uint256 _node, uint256 _value) internal {
         // Check if node previusly existed
@@ -68,42 +71,53 @@ library SortedList {
         self.values[_node] = _value;
     }
 
+    /**
+     * @dev Returns the previus node of a given `_node`
+     *   alongside to the previus node of a hypothetical new `_value`
+     * @param self stored linked list from contract
+     * @param _node a node to search for its left node
+     * @param _value a value to seach for its hypothetical left node
+     * @return `leftNodePost` the node previus to the given `_node` and
+     *   `leftValPost` the node previus to the hypothetical new `_value`
+     * @notice This method performs two seemingly unrelated tasks at the same time
+     *   because both of those tasks require a list iteration, thus saving gas.
+     */
     function findOldAndNewLeftPosition(
         List storage self,
         uint256 _node,
         uint256 _value
     ) internal view returns (
-        uint256 leftOldPos,
-        uint256 leftNewPos
+        uint256 leftNodePos,
+        uint256 leftValPos
     ) {
         // Find old and new value positions
-        bool foundOld;
-        bool foundNew;
+        bool foundNode;
+        bool foundVal;
 
         // Iterate links
         uint256 c = HEAD;
-        while (!foundOld || !foundNew) {
+        while (!foundNode || !foundVal) {
             uint256 next = self.links[c];
 
             // We should have found the old position
             // the new one must be at the end
             if (next == 0) {
-                leftNewPos = c;
+                leftValPos = c;
                 break;
             }
 
             // If the next node is the current node
             // we found the old position
             if (next == _node) {
-                leftOldPos = c;
-                foundOld = true;
+                leftNodePos = c;
+                foundNode = true;
             }
 
             // If the next value is higher and we didn't found one yet
             // the next value if the position
-            if (self.values[next] > _value && !foundNew) {
-                leftNewPos = c;
-                foundNew = true;
+            if (self.values[next] > _value && !foundVal) {
+                leftValPos = c;
+                foundVal = true;
             }
 
             c = next;
@@ -111,7 +125,7 @@ library SortedList {
     }
 
     /**
-     * @dev Get the left node for a given value
+     * @dev Get the left node for a given hypothetical `_value`
      * @param self stored linked list from contract
      * @param _value value to seek
      * @return uint256 left node for the given value
@@ -129,10 +143,10 @@ library SortedList {
     }
 
     /**
-     * @dev Get node value given position
+     * @dev Get the node on a given `_position`
      * @param self stored linked list from contract
-     * @param _position node position to consult
-     * @return uint256 the node value
+     * @param _position node position to retrieve
+     * @return the node key
      */
     function nodeAt(List storage self, uint256 _position) internal view returns (uint256) {
         uint256 next = self.links[HEAD];
