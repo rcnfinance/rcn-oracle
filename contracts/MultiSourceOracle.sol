@@ -143,22 +143,22 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate 
         list.insert(node, address(this));
     }
 
-    function readSample(bytes calldata) external view returns (uint256, uint256) {
-        return readSample();
-    }
-
-    function readSample() public view returns (uint256 _tokens, uint256 _equivalent) {
+    function readSample(bytes memory _oracleData) public view returns (uint256 _tokens, uint256 _equivalent) {
         // Check if paused
         require(!paused && !pausedProvider.isPaused(), "contract paused");
 
         // Check if Oracle contract has been upgraded
         RateOracle _upgrade = upgrade;
         if (address(_upgrade) != address(0)) {
-            return _upgrade.readSample(new bytes(0));
+            return _upgrade.readSample(_oracleData);
         }
 
         // Tokens is always base
         _tokens = BASE;
         _equivalent = list.median(address(this));
+    }
+
+    function readSample() external view returns (uint256 _tokens, uint256 _equivalent) {
+        (_tokens, _equivalent) = readSample(new bytes(0));
     }
 }
