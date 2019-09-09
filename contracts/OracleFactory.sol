@@ -118,6 +118,13 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         emit AddSigner(_oracle, _signer, _name);
     }
 
+    /**
+     * @dev Adds a `_signer` to multiple `_oracles`
+     * @param _oracles List of oracles on which add the `_signer`
+     * @param _signer Address of the signer to be added
+     * @param _name Human readable metadata name of the `_signer`
+     * @notice Acts as a proxy for all the `_oracles` `_oracle.addSigner`
+     */
     function addSignerToOracles(
         address[] calldata _oracles,
         address _signer,
@@ -157,6 +164,13 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         emit RemoveSigner(_oracle, _signer);
     }
 
+
+    /**
+     * @dev Removes a `_signer` from multiple `_oracles`
+     * @param _oracles List of oracles on which remove the `_signer`
+     * @param _signer Address of the signer to be removed
+     * @notice Acts as a proxy for all the `_oracles` `_oracle.removeSigner`
+     */
     function removeSignerFromOracles(
         address[] calldata _oracles,
         address _signer
