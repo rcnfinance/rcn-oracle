@@ -1,8 +1,7 @@
 pragma solidity ^0.5.11;
 
 import "./commons/Ownable.sol";
-import "../installed_contracts/sorted-collection/contracts/SortedList.sol";
-import "../installed_contracts/sorted-collection/contracts/SortedListDelegate.sol";
+import "./commons/SortedList.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
 import "./commons/Pausable.sol";
@@ -10,14 +9,13 @@ import "./utils/StringUtils.sol";
 import "./utils/StringUtils.sol";
 
 
-contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate {
+contract MultiSourceOracle is RateOracle, Ownable, Pausable {
     using SortedList for SortedList.List;
     using StringUtils for string;
 
     uint256 public constant BASE = 10 ** 18;
 
     mapping(address => bool) public isSigner;
-    mapping(address => uint256) internal providedBy;
     mapping(address => string) public nameOfSigner;
     mapping(string => address) public signerWithName;
 
@@ -51,9 +49,8 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate 
         pausedProvider = PausedProvider(msg.sender);
     }
 
-    // Implemented for SortedListDelegate
-    function getValue(uint256 _id) external view returns (uint256) {
-        return providedBy[address(_id)];
+    function providedBy(address _signer) external view returns (uint256) {
+        return list.get(uint256(_signer));
     }
 
     /**
@@ -178,13 +175,15 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate 
      */
     function removeSigner(address _signer) external onlyOwner {
         string memory signerName = nameOfSigner[_signer];
-        if (!isSigner[_signer]) {
-            return;
-        }
+        require(isSigner[_signer], "address is not a signer");
 
         isSigner[_signer] = false;
         signerWithName[signerName] = address(0);
-        list.remove(uint256(_signer));
+
+        // Only remove from list if it provided a value
+        if (list.exists[uint256(_signer)]) {
+            list.remove(uint256(_signer));
+        }
     }
 
     /**
@@ -200,14 +199,7 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate 
         require(isSigner[_signer], "signer not valid");
         require(_rate != 0, "rate can't be zero");
         require(_rate < uint96(uint256(-1)), "rate too high");
-
-        uint256 node = uint256(_signer);
-        if (list.exists(node)) {
-            list.remove(node);
-        }
-
-        providedBy[_signer] = _rate;
-        list.insert(node, address(this));
+        list.set(uint256(_signer), _rate);
     }
 
     /**
@@ -230,7 +222,7 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate 
 
         // Tokens is always base
         _tokens = BASE;
-        _equivalent = list.median(address(this));
+        _equivalent = list.median();
     }
 
     /**

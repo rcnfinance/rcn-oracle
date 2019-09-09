@@ -9,6 +9,7 @@ import "./SortedListDelegate.sol";
  * @dev An utility library for using sorted list data structures.
  */
 library SortedList {
+    using SortedList for SortedList.List;
 
     uint256 private constant NULL = 0;
     uint256 private constant HEAD = 0;
@@ -18,6 +19,7 @@ library SortedList {
 
     struct List {
         // node_id => prev or next => node_id
+        mapping(uint256 => uint256) values;
         mapping(uint256 => mapping(bool => uint256)) list;
     }
 

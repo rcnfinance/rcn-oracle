@@ -59,6 +59,7 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 100000);
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(100000));
+        expect(await oracle.providedBy(accounts[0])).to.eq.BN(bn(100000));
     });
 
     it('Should return average rate with a two providers', async () => {
@@ -69,6 +70,8 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.provide(oracle.address, 200000, { from: accounts[1] });
         const sample = await oracle.readSample();
         expect(sample[1]).to.eq.BN(bn(150000));
+        expect(await oracle.providedBy(accounts[0])).to.eq.BN(bn(100000));
+        expect(await oracle.providedBy(accounts[1])).to.eq.BN(bn(200000));
     });
 
     it('Should return the median rate with a three providers', async () => {
@@ -439,11 +442,11 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.addSigner(oracle.address, accounts[0], 'signer accounts[0]', { from: this.owner });
             await Helper.tryCatchRevert(this.factory.addSigner(oracle.address, accounts[0], 'signer [0]', { from: this.owner }), 'signer already defined');
         });
-        it('Should remove a signer twice and not revert', async () => {
+        it('Should fail to remove a signer twice', async () => {
             const oracle = await createOracle('TEST-SIGNERS-2');
             await this.factory.addSigner(oracle.address, accounts[2], 'account[2] signer', { from: this.owner });
             await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
-            await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
+            await Helper.tryCatchRevert(this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner }), 'address is not a signer');
         });
         it('Should add multiple signers at once', async () => {
             const oracleA = await createOracle('TEST-SIGNERS-3A');
