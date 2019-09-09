@@ -448,6 +448,118 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner });
             await Helper.tryCatchRevert(this.factory.removeSigner(oracle.address, accounts[2], { from: this.owner }), 'address is not a signer');
         });
+        it('Should add multiple signers at once', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-3A');
+            const oracleB = await createOracle('TEST-SIGNERS-3B');
+            const oracleC = await createOracle('TEST-SIGNERS-3C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(true);
+        });
+        it('Should remove multiple signers at once', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-4A');
+            const oracleB = await createOracle('TEST-SIGNERS-4B');
+            const oracleC = await createOracle('TEST-SIGNERS-4C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            await this.factory.removeSignerFromOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                {
+                    from: this.owner,
+                }
+            );
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(false);
+        });
+        it('Should fail to add multiple signers if caller is not the owner', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-5A');
+            const oracleB = await createOracle('TEST-SIGNERS-5B');
+            const oracleC = await createOracle('TEST-SIGNERS-5C');
+
+            await Helper.tryCatchRevert(this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: accounts[2],
+                }
+            ), 'The owner should be the sender');
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(false);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(false);
+        });
+        it('Should fail to remove multiple signers if caller is not the owner', async () => {
+            const oracleA = await createOracle('TEST-SIGNERS-6A');
+            const oracleB = await createOracle('TEST-SIGNERS-6B');
+            const oracleC = await createOracle('TEST-SIGNERS-6C');
+
+            await this.factory.addSignerToOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                'account[2] signer',
+                {
+                    from: this.owner,
+                }
+            );
+
+            await Helper.tryCatchRevert(this.factory.removeSignerFromOracles(
+                [
+                    oracleA.address,
+                    oracleB.address,
+                    oracleC.address,
+                ],
+                accounts[2],
+                {
+                    from: accounts[2],
+                }
+            ), 'The owner should be the sender');
+
+            expect(await oracleA.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleB.isSigner(accounts[2])).to.be.equal(true);
+            expect(await oracleC.isSigner(accounts[2])).to.be.equal(true);
+        });
     });
     describe('Handle usernames', async () => {
         it('Should set the name of a signer', async () => {
@@ -629,6 +741,81 @@ contract('Multi Source Oracle', function (accounts) {
             await this.factory.setPauser(accounts[0], false, { from: this.owner });
             await Helper.tryCatchRevert(this.factory.pause({ from: accounts[0] }), 'not authorized to pause');
             expect(await this.factory.paused()).to.be.equal(false);
+        });
+        it('It should be individually pausable by Owner', async () => {
+            const oracleA = await createOracle('TEST-IND-PAUSE-1A');
+            const oracleB = await createOracle('TEST-IND-PAUSE-1B');
+
+            // Provide rates to the oracles
+            await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+            await this.factory.addSigner(oracleB.address, accounts[0], 'account[0] signer', { from: this.owner });
+            await this.factory.provide(oracleA.address, 100);
+            await this.factory.provide(oracleB.address, 100);
+
+            // Pause oracle A
+            await this.factory.pauseOracle(oracleA.address, { from: this.owner });
+            expect(await oracleA.paused()).to.be.equal(true);
+            expect(await oracleB.paused()).to.be.equal(false);
+
+            // Oracle A should revert on readSample, oracle B should keep working
+            await Helper.tryCatchRevert(oracleA.readSample(), 'contract paused');
+            const sampleB = await oracleB.readSample();
+            expect(sampleB[1]).to.eq.BN(bn(100));
+        });
+        it('It should be individually pausable by Pauser', async () => {
+            const oracleA = await createOracle('TEST-IND-PAUSE-2A');
+            const oracleB = await createOracle('TEST-IND-PAUSE-2B');
+
+            // Provide rates to the oracles
+            await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
+            await this.factory.addSigner(oracleB.address, accounts[0], 'account[0] signer', { from: this.owner });
+            await this.factory.provide(oracleA.address, 100);
+            await this.factory.provide(oracleB.address, 100);
+
+            // Set pauser
+            await this.factory.setPauser(accounts[1], true, { from: this.owner });
+
+            // Pause oracle A
+            await this.factory.pauseOracle(oracleA.address, { from: accounts[1] });
+            expect(await oracleA.paused()).to.be.equal(true);
+            expect(await oracleB.paused()).to.be.equal(false);
+
+            // Remove pauser
+            await this.factory.setPauser(accounts[1], false, { from: this.owner });
+
+            // Oracle A should revert on readSample, oracle B should keep working
+            await Helper.tryCatchRevert(oracleA.readSample(), 'contract paused');
+            const sampleB = await oracleB.readSample();
+            expect(sampleB[1]).to.eq.BN(bn(100));
+        });
+        it('Should fail to be paused by non-pauser', async () => {
+            const oracle = await createOracle('TEST-IND-PAUSE-3');
+            await Helper.tryCatchRevert(this.factory.pauseOracle(oracle.address, { from: accounts[1] }), 'not authorized to pause');
+        });
+        it('Should fail to restart by pauser', async () => {
+            const oracle = await createOracle('TEST-IND-PAUSE-4');
+            await this.factory.setPauser(accounts[1], true, { from: this.owner });
+            await this.factory.pauseOracle(oracle.address, { from: accounts[1] });
+            await Helper.tryCatchRevert(this.factory.startOracle(oracle.address, { from: accounts[1] }), 'The owner should be the sender');
+            expect(await oracle.paused()).to.be.equal(true);
+        });
+        it('Should fail to restart by pauser calling oracle directly', async () => {
+            const oracle = await createOracle('TEST-IND-PAUSE-5');
+            await this.factory.setPauser(accounts[1], true, { from: this.owner });
+            await this.factory.pauseOracle(oracle.address, { from: accounts[1] });
+            await Helper.tryCatchRevert(oracle.start({ from: accounts[1] }), 'The owner should be the sender');
+            expect(await oracle.paused()).to.be.equal(true);
+        });
+        it('Should restart by owner', async () => {
+            const oracle = await createOracle('TEST-IND-PAUSE-6');
+            await this.factory.setPauser(accounts[1], true, { from: this.owner });
+            await this.factory.pauseOracle(oracle.address, { from: accounts[1] });
+            await this.factory.startOracle(oracle.address, { from: this.owner });
+            expect(await oracle.paused()).to.be.equal(false);
+        });
+        it('Should fail to be paused by calling oracle directly', async () => {
+            const oracle = await createOracle('TEST-IND-PAUSE-7');
+            await Helper.tryCatchRevert(oracle.pause({ from: this.owner }), 'not authorized to pause');
         });
     });
 });
