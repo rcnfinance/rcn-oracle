@@ -97,6 +97,18 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         emit AddSigner(_oracle, _signer, _name);
     }
 
+    function addSignerToOracles(
+        address[] calldata _oracles,
+        address _signer,
+        string calldata _name
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _oracles.length; i++) {
+            address oracle = _oracles[i];
+            MultiSourceOracle(oracle).addSigner(_signer, _name);
+            emit AddSigner(oracle, _signer, _name);
+        }
+    }
+
     function setName(address _oracle, address _signer, string calldata _name) external onlyOwner {
         MultiSourceOracle(_oracle).setName(_signer, _name);
         emit UpdateSignerName(
@@ -109,6 +121,17 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     function removeSigner(address _oracle, address _signer) external onlyOwner {
         MultiSourceOracle(_oracle).removeSigner(_signer);
         emit RemoveSigner(_oracle, _signer);
+    }
+
+    function removeSignerFromOracles(
+        address[] calldata _oracles,
+        address _signer
+    ) external onlyOwner {
+        for (uint256 i = 0; i < _oracles.length; i++) {
+            address oracle = _oracles[i];
+            MultiSourceOracle(oracle).removeSigner(_signer);
+            emit RemoveSigner(oracle, _signer);
+        }
     }
 
     function provide(address _oracle, uint256 _rate) external {
