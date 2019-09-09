@@ -5,11 +5,12 @@ import "../installed_contracts/sorted-collection/contracts/SortedList.sol";
 import "../installed_contracts/sorted-collection/contracts/SortedListDelegate.sol";
 import "./interfaces/RateOracle.sol";
 import "./interfaces/PausedProvider.sol";
+import "./commons/Pausable.sol";
 import "./utils/StringUtils.sol";
 import "./utils/StringUtils.sol";
 
 
-contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
+contract MultiSourceOracle is RateOracle, Ownable, Pausable, SortedListDelegate {
     using SortedList for SortedList.List;
     using StringUtils for string;
 
@@ -219,7 +220,7 @@ contract MultiSourceOracle is RateOracle, Ownable, SortedListDelegate {
      */
     function readSample(bytes memory _oracleData) public view returns (uint256 _tokens, uint256 _equivalent) {
         // Check if paused
-        require(!pausedProvider.isPaused(), "contract paused");
+        require(!paused && !pausedProvider.isPaused(), "contract paused");
 
         // Check if Oracle contract has been upgraded
         RateOracle _upgrade = upgrade;
