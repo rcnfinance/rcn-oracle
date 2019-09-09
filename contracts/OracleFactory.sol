@@ -21,36 +21,36 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
     );
 
     event Upgraded(
-        address _oracle,
+        address indexed _oracle,
         address _new
     );
 
     event AddSigner(
-        address _oracle,
+        address indexed _oracle,
         address _signer,
         string _name
     );
 
     event RemoveSigner(
-        address _oracle,
+        address indexed _oracle,
         address _signer
     );
 
     event UpdateSignerName(
-        address _oracle,
+        address indexed _oracle,
         address _signer,
         string _newName
     );
 
     event UpdatedMetadata(
-        address _oracle,
+        address indexed _oracle,
         string _name,
         uint256 _decimals,
         string _maintainer
     );
 
     event Provide(
-        address _oracle,
+        address indexed _oracle,
         address _signer,
         uint256 _rate
     );
