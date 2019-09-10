@@ -15,8 +15,11 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable {
 
     uint256 public constant BASE = 10 ** 18;
 
+    // Storage the available signers
     mapping(address => bool) public isSigner;
+    // Storage the name of the signers
     mapping(address => string) public nameOfSigner;
+    // Relate the name of the signer to the signer
     mapping(string => address) public signerWithName;
 
     SortedList.List private list;
