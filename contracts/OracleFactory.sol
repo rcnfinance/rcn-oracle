@@ -55,6 +55,11 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         uint256 _rate
     );
 
+    event ProvideMultiple(
+        address _signer,
+        bytes32[] _data
+    );
+
     event OraclePaused(
         address indexed _oracle,
         address _pauser
@@ -220,8 +225,8 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
         for (uint256 i = 0; i < _data.length; i++) {
             (address oracle, uint256 rate) = _decode(_data[i]);
             MultiSourceOracle(oracle).provide(msg.sender, rate);
-            emit Provide(oracle, msg.sender, rate);
         }
+        emit ProvideMultiple(msg.sender, _data);
     }
 
     /**
