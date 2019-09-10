@@ -179,6 +179,7 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable {
 
         isSigner[_signer] = false;
         signerWithName[signerName] = address(0);
+        nameOfSigner[_signer] = "";
 
         // Only remove from list if it provided a value
         if (list.exists[uint256(_signer)]) {
