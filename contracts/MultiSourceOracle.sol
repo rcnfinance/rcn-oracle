@@ -174,11 +174,12 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable {
      * @param _signer Address of the signer
      */
     function removeSigner(address _signer) external onlyOwner {
-        string memory signerName = nameOfSigner[_signer];
         require(isSigner[_signer], "address is not a signer");
+        string memory signerName = nameOfSigner[_signer];
 
         isSigner[_signer] = false;
         signerWithName[signerName] = address(0);
+        nameOfSigner[_signer] = "";
 
         // Only remove from list if it provided a value
         if (list.exists[uint256(_signer)]) {
