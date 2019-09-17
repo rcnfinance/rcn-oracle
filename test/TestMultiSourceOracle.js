@@ -11,11 +11,6 @@ function bn (number) {
     return new BN(number);
 }
 
-function toUint96 (number) {
-    const hex = number.toString(16);
-    return `0x${'0'.repeat(24 - hex.length)}${hex}`;
-}
-
 function perm (xs) {
     const ret = [];
 
@@ -351,20 +346,26 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.addSigner(oracleB.address, accounts[1], 'account[1] signer', { from: this.owner });
         await this.factory.provideMultiple(
             [
-                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
-                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+                oracleA.address,
+                oracleB.address,
+            ],
+            [
+                100000,
+                200,
             ], {
                 from: accounts[0],
-            }
-        );
+            });
         await this.factory.provideMultiple(
             [
-                `${toUint96(200000)}${oracleA.address.replace('0x', '')}`,
-                `${toUint96(100)}${oracleB.address.replace('0x', '')}`,
+                oracleA.address,
+                oracleB.address,
+            ],
+            [
+                200000,
+                100,
             ], {
                 from: accounts[1],
-            }
-        );
+            });
         const sampleA = await oracleA.readSample();
         expect(sampleA[1]).to.eq.BN(bn(150000));
         const sampleB = await oracleB.readSample();
@@ -385,8 +386,12 @@ contract('Multi Source Oracle', function (accounts) {
         await this.factory.addSigner(oracleA.address, accounts[0], 'account[0] signer', { from: this.owner });
         await Helper.tryCatchRevert(this.factory.provideMultiple(
             [
-                `${toUint96(100000)}${oracleA.address.replace('0x', '')}`,
-                `${toUint96(200)}${oracleB.address.replace('0x', '')}`,
+                oracleA.address,
+                oracleB.address,
+            ],
+            [
+                100000,
+                200,
             ], {
                 from: accounts[0],
             }
@@ -396,11 +401,6 @@ contract('Multi Source Oracle', function (accounts) {
         const oracle = await createOracle('TEST-RATE-ZERO');
         await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
         await Helper.tryCatchRevert(this.factory.provide(oracle.address, 0, { from: accounts[0] }), 'rate can\'t be zero');
-    });
-    it('Should fail if provided rate overflows uint96', async () => {
-        const oracle = await createOracle('TEST-RATE-TOO-HIGH');
-        await this.factory.addSigner(oracle.address, accounts[0], 'account[0] signer', { from: this.owner });
-        await Helper.tryCatchRevert(this.factory.provide(oracle.address, bn(2).pow(bn(96)), { from: accounts[0] }), 'rate too high');
     });
     it('Should fail to create if symbol is too long', async () => {
         await Helper.tryCatchRevert(createOracle('TEST-CREATE-ORACLE-WITH-SYMBOL-TOO-LONG'), 'string too long');
