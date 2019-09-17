@@ -13,7 +13,7 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable {
     using SortedList for SortedList.List;
     using StringUtils for string;
 
-    uint256 public constant BASE = 10 ** 18;
+    uint256 public constant BASE = 10 ** 36;
 
     mapping(address => bool) public isSigner;
     mapping(address => string) public nameOfSigner;
@@ -199,7 +199,6 @@ contract MultiSourceOracle is RateOracle, Ownable, Pausable {
     function provide(address _signer, uint256 _rate) external onlyOwner {
         require(isSigner[_signer], "signer not valid");
         require(_rate != 0, "rate can't be zero");
-        require(_rate < uint96(uint256(-1)), "rate too high");
         list.set(uint256(_signer), _rate);
     }
 
