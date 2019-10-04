@@ -206,19 +206,20 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
      * @dev Provides multiple rates for a set of oracles, with the same signer
      *   msg.sender becomes the signer for all the provides
      *
-     * @param _data Encoded bytes32 array with the rate to provide and oracle address
-     *   The data is encoded as follows:
-     *     bytes32 = encodePacked(_rate, _oracle, (uint96, address))
-     *
-     *     Ej: 00000000000040c905eee051c0d037db8d41cdbcff7216af97a6bb0818ff5137
-     *         00000000000040c905eee051 (uint96) + c0d037db8d41cdbcff7216af97a6bb0818ff5137 (address)
-     *       would be, provide the rate 0x40c905eee051 to the oracle 0xc0d037db8d41cdbcff7216af97a6bb0818ff5137
-     *
+     * @param _oracles List of oracles to provide a rate for
+     * @param _rates List of rates to provide
      * @notice Acts as a proxy for multiples `_oracle.provide`, using the parameter `msg.sender` as signer
      */
-    function provideMultiple(bytes32[] calldata _data) external {
-        for (uint256 i = 0; i < _data.length; i++) {
-            (address oracle, uint256 rate) = _decode(_data[i]);
+    function provideMultiple(
+        address[] calldata _oracles,
+        uint256[] calldata _rates
+    ) external {
+        uint256 length = _oracles.length;
+        require(length == _rates.length, "arrays should have the same size");
+
+        for (uint256 i = 0; i < length; i++) {
+            address oracle = _oracles[i];
+            uint256 rate = _rates[i];
             MultiSourceOracle(oracle).provide(msg.sender, rate);
             emit Provide(oracle, msg.sender, rate);
         }
@@ -287,17 +288,5 @@ contract OracleFactory is Ownable, Pausable, PausedProvider {
             _decimals,
             _maintainer
         );
-    }
-
-    /**
-     * @dev Decodes a bytes32 into an uint96 and address
-     * @return `_addr` the last 160 bits of the bytes32, `_value` the first 96 bits of the bytes32
-     */
-    function _decode(bytes32 _entry) private pure returns (address _addr, uint256 _value) {
-        /* solium-disable-next-line */
-        assembly {
-            _addr := and(_entry, 0xffffffffffffffffffffffffffffffffffffffff)
-            _value := shr(160, _entry)
-        }
     }
 }
